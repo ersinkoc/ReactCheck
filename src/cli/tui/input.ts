@@ -251,9 +251,9 @@ export class InputHandler extends EventEmitter<InputEvents> {
   private emitKey(event: KeyEvent): void {
     this.emit('key', event);
 
-    // Emit specific key event
+    // Emit specific key event if there are listeners for it
     const specificEvent = `key:${event.name}` as keyof InputEvents;
-    if (specificEvent in this.listeners) {
+    if (this.listenerCount(specificEvent) > 0) {
       // @ts-expect-error - dynamic event name
       this.emit(specificEvent, event);
     }
