@@ -1,6 +1,6 @@
 {
   "name": "@oxog/react-check",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Scan, diagnose, and fix React performance issues. CLI tool and runtime analyzer with actionable fix suggestions.",
   "keywords": [
     "react",
@@ -100,7 +100,13 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build && npm run test:coverage",
-    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\""
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "demo": "npm run demo:install && npm run demo:dev",
+    "demo:install": "cd demo && npm install",
+    "demo:dev": "cd demo && npm run dev",
+    "demo:build": "cd demo && npm run build",
+    "demo:scan": "npm run build && node dist/cli.js scan http://localhost:5173",
+    "demo:scan:webui": "npm run build && node dist/cli.js scan http://localhost:5173 --webui"
   },
   "engines": {
     "node": ">=18.0.0"

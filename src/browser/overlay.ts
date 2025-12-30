@@ -507,6 +507,25 @@ export class Overlay {
   }
 
   /**
+   * Record a render event (updates stats even without DOM element)
+   * @param render - Render information
+   */
+  recordRender(render: RenderInfo): void {
+    // Update render count for this component
+    const count = (this.renderCounts.get(render.componentName) ?? 0) + 1;
+    this.renderCounts.set(render.componentName, count);
+
+    // Update total renders
+    this.totalRenders++;
+
+    // Update stats display
+    this.updateStats();
+  }
+
+  /** Total render count */
+  private totalRenders: number = 0;
+
+  /**
    * Update toolbar stats
    */
   private updateStats(): void {
@@ -515,10 +534,8 @@ export class Overlay {
     let critical = 0;
     let warning = 0;
     let healthy = 0;
-    let total = 0;
 
     for (const [, count] of this.renderCounts) {
-      total += count;
       if (count > 50) critical++;
       else if (count > 20) warning++;
       else healthy++;
@@ -532,7 +549,7 @@ export class Overlay {
     if (criticalEl) criticalEl.textContent = String(critical);
     if (warningEl) warningEl.textContent = String(warning);
     if (healthyEl) healthyEl.textContent = String(healthy);
-    if (rendersEl) rendersEl.textContent = String(total);
+    if (rendersEl) rendersEl.textContent = String(this.totalRenders);
   }
 
   /**
@@ -562,6 +579,7 @@ export class Overlay {
     this.clearHighlights();
     this.clearBadges();
     this.renderCounts.clear();
+    this.totalRenders = 0;
     this.updateStats();
   }
 

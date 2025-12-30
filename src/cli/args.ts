@@ -135,6 +135,16 @@ const FLAG_DEFINITIONS: Record<string, ArgDef> = {
     description: 'Watch mode - keep scanning until quit',
     default: false,
   },
+  webui: {
+    short: 'W',
+    description: 'Enable WebUI dashboard',
+    default: false,
+  },
+  'webui-port': {
+    description: 'WebUI dashboard port',
+    takesValue: true,
+    default: '3100',
+  },
 };
 
 /**
@@ -183,6 +193,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
 
     // Check for commands first (before any flags)
     if (i === 0 || (result.positional.length === 0 && !result.target)) {
+      if (arg === 'scan') {
+        // Explicit scan command - just skip it (scan is already default)
+        result.command = 'scan';
+        i++;
+        continue;
+      }
       if (arg === 'init') {
         result.command = 'init';
         i++;

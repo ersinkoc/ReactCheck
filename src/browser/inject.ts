@@ -67,8 +67,17 @@ class ReactCheckInjector {
     // Set up scanner events
     this.setupScannerEvents();
 
+    // Start the scanner
+    this.scanner.start();
+
     // Connect to CLI
     this.connect();
+
+    // Notify hook that we're ready to process commits
+    const markHookReady = (this as unknown as { _markHookReady?: () => void })._markHookReady;
+    if (markHookReady) {
+      markHookReady();
+    }
 
     // Log initialization
     // eslint-disable-next-line no-console
@@ -83,7 +92,10 @@ class ReactCheckInjector {
       // Send to CLI
       this.send({ type: 'render', payload: render });
 
-      // Update overlay
+      // Always record render for stats (even without DOM element)
+      this.overlay.recordRender(render);
+
+      // Try to highlight if we can find the DOM element
       const element = this.findDOMElement(render.componentName);
       if (element) {
         this.overlay.highlight(render, element);
@@ -129,7 +141,10 @@ class ReactCheckInjector {
           payload: { reactVersion: this.scanner.getReactVersion() },
         });
 
-        // Start scanning
+        // Flush any queued messages (renders that happened before connection)
+        this.flushMessageQueue();
+
+        // Start scanning (scanner may already be started by hook)
         this.scanner.start();
       };
 
@@ -220,6 +235,9 @@ class ReactCheckInjector {
     }
   }
 
+  /** Message queue for messages sent before connection */
+  private messageQueue: BrowserMessage[] = [];
+
   /**
    * Send message to CLI
    * @param message - Browser message
@@ -227,6 +245,21 @@ class ReactCheckInjector {
   private send(message: BrowserMessage): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
+    } else {
+      // Queue message for later
+      this.messageQueue.push(message);
+    }
+  }
+
+  /**
+   * Flush queued messages after connection
+   */
+  private flushMessageQueue(): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.messageQueue.length > 0) {
+      for (const message of this.messageQueue) {
+        this.ws.send(JSON.stringify(message));
+      }
+      this.messageQueue = [];
     }
   }
 
@@ -281,9 +314,16 @@ class ReactCheckInjector {
   }
   win.__REACTCHECK_INJECTED__ = true;
 
+  // Create injector instance first (but don't init yet)
+  const injector = new ReactCheckInjector();
+
   // CRITICAL: Install React DevTools hook IMMEDIATELY before React loads
   // This must happen synchronously before any React code runs
   if (!win.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+    // Queue to store commits until injector is ready
+    const pendingCommits: Array<{ rendererID: number; root: unknown }> = [];
+    let injectorReady = false;
+
     const hook = {
       renderers: new Map(),
       supportsFiber: true,
@@ -292,16 +332,42 @@ class ReactCheckInjector {
         this.renderers.set(id, renderer);
         return id;
       },
-      onCommitFiberRoot: function() {},
+      onCommitFiberRoot: function(rendererID: number, root: unknown) {
+        if (injectorReady) {
+          // Forward to injector's scanner
+          const scanner = (injector as unknown as { scanner: BrowserScanner }).scanner;
+          if (scanner) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            scanner['processCommit']((root as any).current);
+          }
+        } else {
+          // Queue for later
+          pendingCommits.push({ rendererID, root });
+        }
+      },
       onCommitFiberUnmount: function() {},
+      // Method to process pending commits when injector is ready
+      _processPending: function() {
+        injectorReady = true;
+        const scanner = (injector as unknown as { scanner: BrowserScanner }).scanner;
+        if (scanner) {
+          for (const { root } of pendingCommits) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            scanner['processCommit']((root as any).current);
+          }
+          pendingCommits.length = 0;
+        }
+      },
     };
     win.__REACT_DEVTOOLS_GLOBAL_HOOK__ = hook;
     // eslint-disable-next-line no-console
     console.log('[ReactCheck] DevTools hook installed');
-  }
 
-  // Create injector instance
-  const injector = new ReactCheckInjector();
+    // Mark injector ready callback
+    (injector as unknown as { _markHookReady: () => void })._markHookReady = () => {
+      hook._processPending();
+    };
+  }
 
   // Initialize after DOM is ready (for overlay and WebSocket)
   // The hook is already installed above, so React will register with it

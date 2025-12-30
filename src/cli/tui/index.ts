@@ -112,6 +112,9 @@ export class TUI extends EventEmitter<TUIEvents> {
   /** Spinner frame */
   private spinnerFrame: number = 0;
 
+  /** Data provider function for polling */
+  private dataProvider: (() => Partial<TUIState>) | null = null;
+
   /**
    * Create a new TUI
    * @param target - Target URL
@@ -179,13 +182,36 @@ export class TUI extends EventEmitter<TUIEvents> {
       this.render();
     });
 
-    // Start render loop
+    // Start render loop with data polling
     this.renderInterval = setInterval(() => {
       this.spinnerFrame++;
+      // Poll data from provider if available
+      if (this.dataProvider) {
+        try {
+          const data = this.dataProvider();
+          // Always update if we have valid data
+          this.state = { ...this.state, ...data };
+          // Update component list
+          if (data.components && data.components.length > 0) {
+            const items = createComponentListItems(data.components);
+            this.componentList.setItems(items);
+          }
+        } catch {
+          // Ignore errors during data polling
+        }
+      }
       this.render();
     }, 250);
 
     this.render();
+  }
+
+  /**
+   * Set data provider for polling
+   * @param provider - Function that returns current data
+   */
+  setDataProvider(provider: () => Partial<TUIState>): void {
+    this.dataProvider = provider;
   }
 
   /**
@@ -266,8 +292,8 @@ export class TUI extends EventEmitter<TUIEvents> {
     drawDivider(this.screen, 0, height - 3, width, 'single', colors.gray);
     this.renderFooter(1, height - 2, width - 2);
 
-    // Flush to screen
-    this.screen.render();
+    // Flush to screen (force full redraw)
+    this.screen.render(true);
   }
 
   /**

@@ -20,6 +20,7 @@ export default defineConfig({
         'src/cli/tui/**/*.ts', // TUI code, requires terminal I/O
         'src/core/scanner.ts', // Integration layer, tested via e2e
         'src/cli/commands/scan.ts', // Integration layer, tested via e2e
+        'src/webui/**/*.ts', // WebUI code, requires HTTP/WebSocket server
       ],
       thresholds: {
         lines: 95,

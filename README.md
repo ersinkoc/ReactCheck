@@ -10,6 +10,7 @@ A zero-dependency React performance scanner that detects unnecessary re-renders,
 - **Multiple Report Formats**: Export reports as HTML, JSON, or Markdown
 - **Framework Detection**: Automatic detection and framework-specific tips for Next.js, Remix, Vite, CRA, Gatsby
 - **Interactive TUI**: Terminal-based UI for real-time monitoring
+- **WebUI Dashboard**: Real-time web dashboard with live updates
 - **Browser Overlay**: Visual overlay showing component render statistics
 - **Zero Dependencies**: Core functionality has no external dependencies
 
@@ -43,6 +44,18 @@ npx react-check scan http://localhost:3000 \
   --output ./reports \
   --format html,json \
   --headless
+```
+
+With WebUI dashboard:
+
+```bash
+npx react-check scan http://localhost:3000 --webui
+```
+
+WebUI + custom port:
+
+```bash
+npx react-check scan http://localhost:3000 --webui --webui-port 8080
 ```
 
 ### Programmatic Usage
@@ -104,6 +117,8 @@ Options:
   --include <patterns>    Component patterns to include
   --exclude <patterns>    Component patterns to exclude
   --no-tui                Disable TUI, use simple output
+  -W, --webui             Enable WebUI dashboard
+  --webui-port <port>     WebUI dashboard port (default: 3100)
 ```
 
 ### `report <input>`
@@ -120,6 +135,42 @@ Detect the React framework in use.
 
 ```bash
 react-check detect ./my-react-app
+```
+
+## Demo
+
+Run the included demo React app to test ReactCheck:
+
+```bash
+# Start demo app (runs on http://localhost:5173)
+npm run demo
+
+# In another terminal, scan with TUI
+npm run demo:scan
+
+# Or scan with WebUI dashboard
+npm run demo:scan:webui
+```
+
+## WebUI Dashboard
+
+The WebUI dashboard provides a real-time web interface for monitoring React performance:
+
+- **Live Summary**: Components, renders, FPS, and issue counts update in real-time
+- **Component List**: Sortable and filterable table with severity indicators
+- **Render Events**: Live stream of render events as they occur
+- **Render Chains**: Visualization of cascade render chains
+- **Auto-open**: Dashboard opens automatically in your default browser
+
+```bash
+# Enable WebUI alongside TUI
+react-check scan http://localhost:3000 --webui
+
+# Custom WebUI port
+react-check scan http://localhost:3000 --webui --webui-port 8080
+
+# WebUI only (no TUI)
+react-check scan http://localhost:3000 --webui --silent
 ```
 
 ## Report Formats
@@ -320,6 +371,9 @@ src/
 ├── cli/            # CLI implementation
 │   ├── index.ts    # CLI entry
 │   └── tui/        # Terminal UI
+├── webui/          # Web dashboard
+│   ├── server.ts   # HTTP + WebSocket server
+│   └── dashboard.ts # Dashboard HTML generator
 └── utils/          # Shared utilities
     ├── colors.ts   # ANSI colors
     ├── format.ts   # Formatters
