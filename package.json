@@ -1,0 +1,127 @@
+{
+  "name": "@oxog/react-check",
+  "version": "1.0.0",
+  "description": "Scan, diagnose, and fix React performance issues. CLI tool and runtime analyzer with actionable fix suggestions.",
+  "keywords": [
+    "react",
+    "performance",
+    "profiler",
+    "debugging",
+    "optimization",
+    "render",
+    "cli",
+    "devtools"
+  ],
+  "author": "ersinkoc",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ersinkoc/reactcheck"
+  },
+  "homepage": "https://ersinkoc.github.io/reactcheck",
+  "bugs": {
+    "url": "https://github.com/ersinkoc/reactcheck/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "react-check": "./dist/cli.js",
+    "reactcheck": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./scanner": {
+      "import": {
+        "types": "./dist/scanner.d.ts",
+        "default": "./dist/scanner.js"
+      },
+      "require": {
+        "types": "./dist/scanner.d.cts",
+        "default": "./dist/scanner.cjs"
+      }
+    },
+    "./chain": {
+      "import": {
+        "types": "./dist/chain.d.ts",
+        "default": "./dist/chain.js"
+      },
+      "require": {
+        "types": "./dist/chain.d.cts",
+        "default": "./dist/chain.cjs"
+      }
+    },
+    "./fix": {
+      "import": {
+        "types": "./dist/fix.d.ts",
+        "default": "./dist/fix.js"
+      },
+      "require": {
+        "types": "./dist/fix.d.cts",
+        "default": "./dist/fix.cjs"
+      }
+    },
+    "./detect": {
+      "import": {
+        "types": "./dist/detect.d.ts",
+        "default": "./dist/detect.js"
+      },
+      "require": {
+        "types": "./dist/detect.d.cts",
+        "default": "./dist/detect.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run test:coverage",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "puppeteer": "^23.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "puppeteer": ">=21.0.0"
+  },
+  "peerDependenciesMeta": {
+    "puppeteer": {
+      "optional": true
+    }
+  }
+}

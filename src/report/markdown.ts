@@ -1,0 +1,276 @@
+/**
+ * Markdown report generator
+ * @packageDocumentation
+ */
+
+import type { SessionReport, ComponentStats, FixSuggestion, RenderChainInfo } from '../types.js';
+import { formatDuration, formatNumber, formatRenderTime, formatPercent } from '../utils/format.js';
+
+/**
+ * Generate a Markdown report
+ * @param report - Session report data
+ * @returns Markdown string
+ */
+export function generateMarkdownReport(report: SessionReport): string {
+  const lines: string[] = [];
+
+  // Header
+  lines.push('# ReactCheck Report');
+  lines.push('');
+  lines.push(`**URL:** ${report.session.url}  `);
+  lines.push(`**Duration:** ${formatDuration(report.session.duration)}  `);
+  lines.push(`**Date:** ${new Date(report.session.timestamp).toLocaleString()}  `);
+  lines.push(`**Session ID:** ${report.session.id}`);
+  lines.push('');
+
+  // Summary
+  lines.push('## Summary');
+  lines.push('');
+  lines.push('| Metric | Value |');
+  lines.push('|--------|-------|');
+  lines.push(`| Total Components | ${formatNumber(report.summary.totalComponents)} |`);
+  lines.push(`| Total Renders | ${formatNumber(report.summary.totalRenders)} |`);
+  lines.push(`| Unnecessary Renders | ${formatNumber(report.summary.unnecessaryRenders)} |`);
+  lines.push(`| Average FPS | ${report.summary.avgFps} |`);
+  lines.push(`| Minimum FPS | ${report.summary.minFps} |`);
+  lines.push('');
+
+  // Issue summary
+  lines.push('### Issues');
+  lines.push('');
+  if (report.summary.criticalIssues > 0) {
+    lines.push(`- 🔴 **Critical:** ${report.summary.criticalIssues}`);
+  }
+  if (report.summary.warnings > 0) {
+    lines.push(`- 🟡 **Warning:** ${report.summary.warnings}`);
+  }
+  lines.push(`- 🟢 **Healthy:** ${report.summary.healthy}`);
+  lines.push('');
+
+  // Critical Issues
+  const criticalComponents = report.components.filter((c) => c.severity === 'critical');
+  if (criticalComponents.length > 0) {
+    lines.push('## Critical Issues');
+    lines.push('');
+    for (const component of criticalComponents) {
+      lines.push(...formatComponentSection(component, report.suggestions));
+    }
+  }
+
+  // Warnings
+  const warningComponents = report.components.filter((c) => c.severity === 'warning');
+  if (warningComponents.length > 0) {
+    lines.push('## Warnings');
+    lines.push('');
+    for (const component of warningComponents.slice(0, 10)) {
+      lines.push(...formatComponentSection(component, report.suggestions));
+    }
+    if (warningComponents.length > 10) {
+      lines.push(`*...and ${warningComponents.length - 10} more warnings*`);
+      lines.push('');
+    }
+  }
+
+  // Render Chains
+  if (report.chains.length > 0) {
+    lines.push('## Render Chains');
+    lines.push('');
+    for (const chain of report.chains.slice(0, 5)) {
+      lines.push(...formatChainSection(chain));
+    }
+    if (report.chains.length > 5) {
+      lines.push(`*...and ${report.chains.length - 5} more chains*`);
+      lines.push('');
+    }
+  }
+
+  // Top Suggestions
+  const topSuggestions = report.suggestions
+    .filter((s) => s.severity === 'critical' || s.severity === 'warning')
+    .slice(0, 5);
+
+  if (topSuggestions.length > 0) {
+    lines.push('## Top Fix Suggestions');
+    lines.push('');
+    for (const suggestion of topSuggestions) {
+      lines.push(...formatSuggestionSection(suggestion));
+    }
+  }
+
+  // Framework info
+  if (report.framework) {
+    lines.push('## Framework');
+    lines.push('');
+    lines.push(`**Detected:** ${report.framework.name} ${report.framework.version}`);
+    lines.push('');
+    if (report.framework.features.length > 0) {
+      lines.push('**Features:** ' + report.framework.features.join(', '));
+      lines.push('');
+    }
+    if (report.framework.tips.length > 0) {
+      lines.push('### Framework-specific Tips');
+      lines.push('');
+      for (const tip of report.framework.tips) {
+        lines.push(`- ${tip}`);
+      }
+      lines.push('');
+    }
+  }
+
+  // All Components Table
+  lines.push('## All Components');
+  lines.push('');
+  lines.push('| Component | Renders | Unnecessary | Avg Time | Severity |');
+  lines.push('|-----------|---------|-------------|----------|----------|');
+
+  const sortedComponents = [...report.components].sort((a, b) => b.renders - a.renders);
+  for (const comp of sortedComponents.slice(0, 50)) {
+    const severityEmoji = getSeverityEmoji(comp.severity);
+    const unnecessaryPercent =
+      comp.renders > 0 ? formatPercent(comp.unnecessary / comp.renders, { decimals: 0 }) : '0%';
+    lines.push(
+      `| ${comp.name} | ${formatNumber(comp.renders)} | ${comp.unnecessary} (${unnecessaryPercent}) | ${formatRenderTime(comp.avgRenderTime)} | ${severityEmoji} ${comp.severity} |`
+    );
+  }
+
+  if (sortedComponents.length > 50) {
+    lines.push('');
+    lines.push(`*Showing top 50 of ${sortedComponents.length} components*`);
+  }
+  lines.push('');
+
+  // Footer
+  lines.push('---');
+  lines.push('');
+  lines.push(`*Generated by [ReactCheck](https://ersinkoc.github.io/reactcheck) v${report.version}*`);
+
+  return lines.join('\n');
+}
+
+/**
+ * Format a component section
+ * @param component - Component stats
+ * @param suggestions - All suggestions
+ * @returns Markdown lines
+ */
+function formatComponentSection(component: ComponentStats, suggestions: FixSuggestion[]): string[] {
+  const lines: string[] = [];
+  const severityEmoji = getSeverityEmoji(component.severity);
+
+  lines.push(`### ${severityEmoji} ${component.name}`);
+  lines.push('');
+  lines.push(`- **Renders:** ${formatNumber(component.renders)} (expected: ~${component.expectedRenders})`);
+  lines.push(`- **Unnecessary:** ${component.unnecessary} (${formatPercent(component.unnecessary / Math.max(1, component.renders))})`);
+  lines.push(`- **Avg Render Time:** ${formatRenderTime(component.avgRenderTime)}`);
+  lines.push(`- **Max Render Time:** ${formatRenderTime(component.maxRenderTime)}`);
+
+  if (component.parent) {
+    lines.push(`- **Parent:** ${component.parent}`);
+  }
+
+  if (component.chain.length > 1) {
+    lines.push(`- **Render Chain:** ${component.chain.join(' → ')}`);
+  }
+
+  // Component-specific suggestions
+  const componentSuggestions = suggestions.filter((s) => s.componentName === component.name);
+  if (componentSuggestions.length > 0) {
+    lines.push('');
+    lines.push('**Suggested Fix:**');
+    lines.push('');
+    const suggestion = componentSuggestions[0];
+    if (suggestion) {
+      lines.push(`> ${suggestion.fix}: ${suggestion.issue}`);
+      lines.push('');
+      lines.push('```jsx');
+      lines.push(suggestion.codeAfter.split('\n').slice(0, 10).join('\n'));
+      if (suggestion.codeAfter.split('\n').length > 10) {
+        lines.push('// ...');
+      }
+      lines.push('```');
+    }
+  }
+
+  lines.push('');
+  return lines;
+}
+
+/**
+ * Format a chain section
+ * @param chain - Render chain
+ * @returns Markdown lines
+ */
+function formatChainSection(chain: RenderChainInfo): string[] {
+  const lines: string[] = [];
+
+  lines.push(`### Chain: ${chain.trigger}`);
+  lines.push('');
+  lines.push('```');
+  lines.push(chain.chain.join(' → '));
+  lines.push('```');
+  lines.push('');
+  lines.push(`- **Depth:** ${chain.depth}`);
+  lines.push(`- **Total Renders:** ${chain.totalRenders}`);
+  lines.push(`- **Root Cause:** ${chain.rootCause}`);
+  if (chain.isContextTriggered) {
+    lines.push(`- **Context Triggered:** Yes`);
+  }
+  lines.push('');
+
+  return lines;
+}
+
+/**
+ * Format a suggestion section
+ * @param suggestion - Fix suggestion
+ * @returns Markdown lines
+ */
+function formatSuggestionSection(suggestion: FixSuggestion): string[] {
+  const lines: string[] = [];
+  const severityEmoji = getSeverityEmoji(suggestion.severity);
+
+  lines.push(`### ${severityEmoji} ${suggestion.componentName}: ${suggestion.fix}`);
+  lines.push('');
+  lines.push(`**Issue:** ${suggestion.issue}`);
+  lines.push('');
+  lines.push(`**Cause:** ${suggestion.cause}`);
+  lines.push('');
+  lines.push('**Before:**');
+  lines.push('```jsx');
+  lines.push(suggestion.codeBefore.split('\n').slice(0, 8).join('\n'));
+  lines.push('```');
+  lines.push('');
+  lines.push('**After:**');
+  lines.push('```jsx');
+  lines.push(suggestion.codeAfter.split('\n').slice(0, 8).join('\n'));
+  lines.push('```');
+  lines.push('');
+  lines.push(`**Explanation:** ${suggestion.explanation}`);
+  if (suggestion.impact) {
+    lines.push('');
+    lines.push(`**Expected Impact:** ${suggestion.impact}`);
+  }
+  lines.push('');
+
+  return lines;
+}
+
+/**
+ * Get emoji for severity level
+ * @param severity - Severity level
+ * @returns Emoji string
+ */
+function getSeverityEmoji(severity: string): string {
+  switch (severity) {
+    case 'critical':
+      return '🔴';
+    case 'warning':
+      return '🟡';
+    case 'info':
+      return '🔵';
+    case 'healthy':
+      return '🟢';
+    default:
+      return '⚪';
+  }
+}
