@@ -1,8 +1,10 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
+
+# Allow website package-lock.json for CI
+!website/package-lock.json
 
 # Build output
 dist/
