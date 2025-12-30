@@ -281,15 +281,36 @@ class ReactCheckInjector {
   }
   win.__REACTCHECK_INJECTED__ = true;
 
-  // Create and initialize injector
+  // CRITICAL: Install React DevTools hook IMMEDIATELY before React loads
+  // This must happen synchronously before any React code runs
+  if (!win.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+    const hook = {
+      renderers: new Map(),
+      supportsFiber: true,
+      inject: function(renderer: unknown) {
+        const id = this.renderers.size + 1;
+        this.renderers.set(id, renderer);
+        return id;
+      },
+      onCommitFiberRoot: function() {},
+      onCommitFiberUnmount: function() {},
+    };
+    win.__REACT_DEVTOOLS_GLOBAL_HOOK__ = hook;
+    // eslint-disable-next-line no-console
+    console.log('[ReactCheck] DevTools hook installed');
+  }
+
+  // Create injector instance
   const injector = new ReactCheckInjector();
 
-  // Wait for DOM ready
+  // Initialize after DOM is ready (for overlay and WebSocket)
+  // The hook is already installed above, so React will register with it
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       injector.init();
     });
   } else {
+    // DOM already loaded, init immediately
     injector.init();
   }
 
