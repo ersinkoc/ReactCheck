@@ -12,9 +12,9 @@ import { colors, semantic } from '../utils/colors.js';
 const logger = new Logger({ prefix: 'ReactCheck', level: LogLevel.INFO });
 
 /**
- * Package version (injected at build time)
+ * Package version
  */
-const VERSION = '1.0.0';
+const VERSION = '1.1.2';
 
 /**
  * Print version information
