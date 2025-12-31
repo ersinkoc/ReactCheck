@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ interface CodeBlockProps {
   className?: string;
 }
 
-export function CodeBlock({
+export const CodeBlock = memo(function CodeBlock({
   code,
   language,
   filename,
@@ -23,13 +23,13 @@ export function CodeBlock({
 }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [code]);
 
-  const customStyle = {
+  const customStyle = useMemo(() => ({
     ...oneDark,
     'pre[class*="language-"]': {
       ...oneDark['pre[class*="language-"]'],
@@ -45,7 +45,21 @@ export function CodeBlock({
       background: 'transparent',
       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
     },
-  };
+  }), [filename]);
+
+  const lineProps = useCallback((lineNumber: number) => {
+    const style: React.CSSProperties = {
+      display: 'block',
+      width: '100%',
+    };
+    if (highlightLines.includes(lineNumber)) {
+      style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      style.borderLeft = '3px solid #3b82f6';
+      style.marginLeft = '-3px';
+      style.paddingLeft = '3px';
+    }
+    return { style };
+  }, [highlightLines]);
 
   return (
     <div className={cn("rounded-lg overflow-hidden border border-border", className)}>
@@ -90,23 +104,11 @@ export function CodeBlock({
             color: 'hsl(0 0% 40%)',
             userSelect: 'none',
           }}
-          lineProps={(lineNumber) => {
-            const style: React.CSSProperties = {
-              display: 'block',
-              width: '100%',
-            };
-            if (highlightLines.includes(lineNumber)) {
-              style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-              style.borderLeft = '3px solid #3b82f6';
-              style.marginLeft = '-3px';
-              style.paddingLeft = '3px';
-            }
-            return { style };
-          }}
+          lineProps={lineProps}
         >
           {code.trim()}
         </SyntaxHighlighter>
       </div>
     </div>
   );
-}
+});

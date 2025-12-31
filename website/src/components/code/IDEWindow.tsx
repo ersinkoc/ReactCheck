@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ interface IDEWindowProps {
   activeFileIndex?: number;
 }
 
-export function IDEWindow({
+export const IDEWindow = memo(function IDEWindow({
   files,
   title = "Code Editor",
   className,
@@ -32,13 +32,13 @@ export function IDEWindow({
   const [copied, setCopied] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(files[activeFile].code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [files, activeFile]);
 
-  const customStyle = {
+  const customStyle = useMemo(() => ({
     ...oneDark,
     'pre[class*="language-"]': {
       ...oneDark['pre[class*="language-"]'],
@@ -53,7 +53,26 @@ export function IDEWindow({
       background: 'transparent',
       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
     },
-  };
+  }), []);
+
+  const lineProps = useCallback((lineNumber: number) => {
+    const style: React.CSSProperties = {
+      display: 'block',
+      width: '100%',
+    };
+    if (highlightLines.includes(lineNumber)) {
+      style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      style.borderLeft = '2px solid #3b82f6';
+      style.marginLeft = '-2px';
+      style.paddingLeft = '2px';
+    }
+    return { style };
+  }, [highlightLines]);
+
+  const lineNumbers = useMemo(() =>
+    files[activeFile].code.split('\n').map((_, i) => i + 1),
+    [files, activeFile]
+  );
 
   return (
     <div className={cn(
@@ -146,18 +165,18 @@ export function IDEWindow({
               {/* Line numbers */}
               {showLineNumbers && (
                 <div className="flex-shrink-0 py-4 pr-0 pl-4 text-right select-none bg-[#0d0d0d] border-r border-border/50">
-                  {files[activeFile].code.split('\n').map((_, i) => (
+                  {lineNumbers.map((num) => (
                     <div
-                      key={i}
+                      key={num}
                       className={cn(
                         "px-2 text-xs leading-[1.6] font-mono",
-                        highlightLines.includes(i + 1)
+                        highlightLines.includes(num)
                           ? "text-primary bg-primary/10"
                           : "text-muted-foreground/50"
                       )}
                       style={{ fontSize: '13px', lineHeight: '1.6' }}
                     >
-                      {i + 1}
+                      {num}
                     </div>
                   ))}
                 </div>
@@ -170,19 +189,7 @@ export function IDEWindow({
                   style={customStyle}
                   showLineNumbers={false}
                   wrapLines={true}
-                  lineProps={(lineNumber) => {
-                    const style: React.CSSProperties = {
-                      display: 'block',
-                      width: '100%',
-                    };
-                    if (highlightLines.includes(lineNumber)) {
-                      style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-                      style.borderLeft = '2px solid #3b82f6';
-                      style.marginLeft = '-2px';
-                      style.paddingLeft = '2px';
-                    }
-                    return { style };
-                  }}
+                  lineProps={lineProps}
                 >
                   {files[activeFile].code.trim()}
                 </SyntaxHighlighter>
@@ -193,4 +200,4 @@ export function IDEWindow({
       </div>
     </div>
   );
-}
+});

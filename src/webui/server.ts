@@ -161,7 +161,7 @@ export class WebUIServer extends EventEmitter<WebUIServerEvents> {
   private target: string;
   private currentState: DashboardState;
 
-  constructor(port: number = 3100, target: string = '') {
+  constructor(port: number = 3199, target: string = '') {
     super();
     this.port = port;
     this.target = target;
@@ -371,6 +371,8 @@ export class WebUIServer extends EventEmitter<WebUIServerEvents> {
    */
   updateComponents(components: ComponentStats[]): void {
     this.currentState.components = components;
+    // Broadcast full state periodically for component updates
+    // Individual component updates are handled by updateComponent
   }
 
   /**
@@ -378,7 +380,20 @@ export class WebUIServer extends EventEmitter<WebUIServerEvents> {
    */
   updateFps(fps: number): void {
     this.currentState.fps = fps;
+    // FPS is included in full state broadcasts
   }
+
+  /**
+   * Broadcast components to all clients (for batch updates)
+   */
+  broadcastComponents(): void {
+    for (const component of this.currentState.components) {
+      this.broadcast({ type: 'component-update', payload: component });
+    }
+  }
+
+  /** Last render broadcast time */
+  private lastRenderBroadcast: number = 0;
 
   /**
    * Add render event
@@ -389,7 +404,13 @@ export class WebUIServer extends EventEmitter<WebUIServerEvents> {
     if (this.currentState.recentRenders.length > 50) {
       this.currentState.recentRenders.pop();
     }
-    this.broadcast({ type: 'render-event', payload: render });
+
+    // Throttle render broadcasts to max 10 per second
+    const now = Date.now();
+    if (now - this.lastRenderBroadcast >= 100) {
+      this.lastRenderBroadcast = now;
+      this.broadcast({ type: 'render-event', payload: render });
+    }
   }
 
   /**

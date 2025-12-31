@@ -137,8 +137,6 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
     this.overlay = new Overlay({
       enabled: true,
       highlightRenders: this.config.highlightRenders ?? true,
-      animationSpeed: this.config.animationSpeed ?? 'fast',
-      showBadges: true,
       showToolbar: true,
     });
 

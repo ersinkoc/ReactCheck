@@ -143,7 +143,7 @@ const FLAG_DEFINITIONS: Record<string, ArgDef> = {
   'webui-port': {
     description: 'WebUI dashboard port',
     takesValue: true,
-    default: '3100',
+    default: '3199',
   },
 };
 

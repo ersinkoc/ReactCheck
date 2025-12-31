@@ -57,10 +57,21 @@ export function getComponentName(fiber: FiberNode): string {
 
     case FiberTag.ForwardRef:
       // ForwardRef wraps the actual component
-      if (type && typeof type === 'object' && 'render' in type) {
-        const render = type.render as FiberType;
-        return `ForwardRef(${getTypeName(render) || 'Anonymous'})`;
+      if (type && typeof type === 'object') {
+        const typeObj = type as { displayName?: string; render?: FiberType; $$typeof?: symbol };
+        // First check if ForwardRef itself has a displayName
+        if (typeObj.displayName) {
+          return typeObj.displayName;
+        }
+        // Then check the render function
+        if ('render' in typeObj && typeObj.render) {
+          const renderName = getTypeName(typeObj.render);
+          if (renderName && renderName !== 'Anonymous') {
+            return renderName;
+          }
+        }
       }
+      // Skip generic ForwardRef without meaningful name
       return 'ForwardRef';
 
     case FiberTag.MemoComponent:

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { Copy, Check, Terminal } from 'lucide-react';
 
@@ -17,7 +17,7 @@ interface TerminalWindowProps {
   typingSpeed?: number;
 }
 
-export function TerminalWindow({
+export const TerminalWindow = memo(function TerminalWindow({
   lines,
   title = "Terminal",
   className,
@@ -88,7 +88,7 @@ export function TerminalWindow({
     }
   }, [currentLineIndex, currentCharIndex, isTyping, lines, autoPlay, loop, typingSpeed]);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     const commands = lines
       .filter(l => l.type === 'command')
       .map(l => l.text)
@@ -96,7 +96,7 @@ export function TerminalWindow({
     await navigator.clipboard.writeText(commands);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [lines]);
 
   return (
     <div className={cn(
@@ -161,4 +161,4 @@ export function TerminalWindow({
       </div>
     </div>
   );
-}
+});

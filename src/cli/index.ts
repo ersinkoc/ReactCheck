@@ -3,9 +3,10 @@
  * @packageDocumentation
  */
 
-import { parseArgs, validateArgs, getHelpText, type Command } from './args.js';
+import { parseArgs, validateArgs, getHelpText } from './args.js';
 import { runScanCommand } from './commands/scan.js';
 import { runInitCommand } from './commands/init.js';
+import { runInteractiveWizard } from './interactive.js';
 import { Logger, LogLevel } from '../utils/logger.js';
 import { colors, semantic } from '../utils/colors.js';
 
@@ -63,6 +64,62 @@ export class CLI {
   }
 
   /**
+   * Convert wizard config to ParsedArgs
+   * @param config - Wizard configuration
+   * @returns Parsed arguments for scan command
+   */
+  private wizardConfigToArgs(config: import('./interactive.js').WizardConfig): import('./args.js').ParsedArgs {
+    const flags = new Map<string, string | boolean>();
+
+    // Set mode flags
+    if (config.mode === 'tui') {
+      flags.set('tui', true);
+    } else if (config.mode === 'webui') {
+      flags.set('webui', true);
+      flags.set('webui-port', String(config.webuiPort));
+    } else if (config.mode === 'headless') {
+      flags.set('silent', true);
+    }
+
+    // Set duration
+    if (config.duration) {
+      flags.set('duration', String(config.duration));
+    }
+
+    // Set thresholds
+    flags.set('threshold-warning', String(config.warningThreshold));
+    flags.set('threshold-critical', String(config.criticalThreshold));
+
+    // Set report options
+    if (config.reportFormats.length > 0) {
+      flags.set('report', true);
+      if (config.reportFormats.length === 3) {
+        flags.set('format', 'all');
+      } else {
+        // Use first format (most common case)
+        const firstFormat = config.reportFormats[0];
+        if (firstFormat) {
+          flags.set('format', firstFormat);
+        }
+      }
+    }
+
+    // Set output directory
+    flags.set('output', config.outputDir);
+
+    // Set headless browser mode
+    flags.set('headless', config.headless);
+
+    return {
+      command: 'scan',
+      target: config.url,
+      flags,
+      positional: [],
+      raw: [],
+    };
+  }
+
+  /**
    * Run the CLI
    * @returns Exit code
    */
@@ -88,6 +145,20 @@ export class CLI {
 
         case 'scan':
         default:
+          // Check if no target URL provided - launch interactive wizard
+          if (!args.target && args.raw.length === 0 && process.stdin.isTTY) {
+            printBanner();
+            const wizardConfig = await runInteractiveWizard();
+            if (!wizardConfig) {
+              // User cancelled
+              return 0;
+            }
+
+            // Convert wizard config to ParsedArgs
+            const wizardArgs = this.wizardConfigToArgs(wizardConfig);
+            return await runScanCommand(wizardArgs);
+          }
+
           // Validate arguments
           const errors = validateArgs(args);
           if (errors.length > 0) {
@@ -145,3 +216,4 @@ if (!process.env.VITEST) {
 export { parseArgs, validateArgs, getHelpText } from './args.js';
 export { loadConfig, validateConfig, generateDefaultConfigContent } from './config.js';
 export { TUI } from './tui/index.js';
+export { InteractiveWizard, runInteractiveWizard } from './interactive.js';

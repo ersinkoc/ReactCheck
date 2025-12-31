@@ -49,7 +49,6 @@ class ReactCheckInjector {
     this.overlay = new Overlay({
       enabled: true,
       highlightRenders: true,
-      showBadges: true,
       showToolbar: true,
     });
   }
@@ -264,9 +263,6 @@ class ReactCheckInjector {
       this.overlay.configure({ highlightRenders: config.highlightRenders });
     }
 
-    if (config.animationSpeed !== undefined) {
-      this.overlay.configure({ animationSpeed: config.animationSpeed });
-    }
   }
 
   /** Message queue for messages sent before connection */
@@ -321,6 +317,15 @@ class ReactCheckInjector {
 // ============================================================================
 
 (function() {
+  // Skip internal/blank pages
+  const currentUrl = window.location.href;
+  if (currentUrl === 'about:blank' ||
+      currentUrl.startsWith('chrome://') ||
+      currentUrl.startsWith('chrome-extension://') ||
+      currentUrl.startsWith('devtools://')) {
+    return;
+  }
+
   // Check if already injected
   const win = window as WindowWithReactDevTools;
   if (win.__REACTCHECK_INJECTED__) {
@@ -409,7 +414,6 @@ class ReactCheckInjector {
       injector.init();
     });
   } else {
-    // DOM already loaded, init immediately
     injector.init();
   }
 

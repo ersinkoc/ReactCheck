@@ -45,7 +45,7 @@ const optionsTable = [
   { flag: '--headless', default: 'false', description: 'Run browser in headless mode' },
   { flag: '--no-tui', default: 'false', description: 'Disable interactive TUI' },
   { flag: '--webui, -W', default: 'false', description: 'Enable WebUI dashboard in browser' },
-  { flag: '--webui-port', default: '3100', description: 'WebUI dashboard port' },
+  { flag: '--webui-port', default: '3099', description: 'WebUI dashboard port' },
   { flag: '--viewport, -v', default: '1280x720', description: 'Browser viewport size' },
 ];
 

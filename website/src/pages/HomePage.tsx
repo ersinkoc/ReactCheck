@@ -1,8 +1,10 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TerminalWindow, IDEWindow } from '@/components/code';
+import type { LucideIcon } from 'lucide-react';
 import {
   ArrowRight,
   Search,
@@ -18,6 +20,94 @@ import {
   Eye,
   Globe,
 } from 'lucide-react';
+
+// Memoized feature card to prevent unnecessary re-renders
+interface FeatureCardProps {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  index: number;
+}
+
+const FeatureCard = memo(function FeatureCard({ icon: Icon, title, description, index }: FeatureCardProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1 }}
+      className="p-6 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors group"
+    >
+      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+        <Icon className="w-6 h-6 text-primary" />
+      </div>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
+    </motion.div>
+  );
+});
+
+// Memoized step card
+interface StepCardProps {
+  step: string;
+  title: string;
+  description: string;
+  code: string;
+  index: number;
+}
+
+const StepCard = memo(function StepCard({ step, title, description, code, index }: StepCardProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1 }}
+      className="relative"
+    >
+      <div className="text-6xl font-bold text-primary/10 absolute -top-4 -left-2">
+        {step}
+      </div>
+      <div className="relative pt-8">
+        <h3 className="text-xl font-semibold mb-3">{title}</h3>
+        <p className="text-muted-foreground mb-4">{description}</p>
+        <code className="block px-4 py-2 bg-card rounded-lg text-sm font-mono text-primary border border-border">
+          {code}
+        </code>
+      </div>
+    </motion.div>
+  );
+});
+
+// Memoized comparison row
+interface ComparisonRowProps {
+  feature: string;
+  reactcheck: boolean;
+  others: boolean;
+  index: number;
+}
+
+const ComparisonRow = memo(function ComparisonRow({ feature, reactcheck, others, index }: ComparisonRowProps) {
+  return (
+    <tr className={index % 2 === 0 ? 'bg-background' : 'bg-card/50'}>
+      <td className="px-6 py-4 text-sm">{feature}</td>
+      <td className="px-6 py-4 text-center">
+        {reactcheck ? (
+          <CheckCircle2 className="w-5 h-5 text-healthy mx-auto" />
+        ) : (
+          <XCircle className="w-5 h-5 text-critical mx-auto" />
+        )}
+      </td>
+      <td className="px-6 py-4 text-center">
+        {others ? (
+          <CheckCircle2 className="w-5 h-5 text-muted-foreground mx-auto" />
+        ) : (
+          <XCircle className="w-5 h-5 text-critical/50 mx-auto" />
+        )}
+      </td>
+    </tr>
+  );
+});
 
 const terminalLines = [
   { type: 'command' as const, text: 'npx @oxog/react-check localhost:3000' },
@@ -129,7 +219,32 @@ const comparisonData = [
   { feature: 'Programmatic API', reactcheck: true, others: true },
 ];
 
-export function HomePage() {
+const steps = [
+  {
+    step: '01',
+    title: 'Scan',
+    description: 'Point ReactCheck at your app and interact normally. It monitors every component render.',
+    code: 'npx @oxog/react-check localhost:3000',
+  },
+  {
+    step: '02',
+    title: 'Diagnose',
+    description: 'See which components re-render excessively and understand the render chains.',
+    code: 'ProductCard: 127 renders (expected: 12)',
+  },
+  {
+    step: '03',
+    title: 'Fix',
+    description: 'Get specific, copy-paste code fixes for each performance issue found.',
+    code: 'const ProductCard = memo(ProductCard);',
+  },
+];
+
+// Memoize beforeAfterCode files to prevent object recreation
+const beforeFiles = [{ name: 'ProductCard.tsx', language: 'typescript', code: beforeAfterCode.before }];
+const afterFiles = [{ name: 'ProductCard.tsx', language: 'typescript', code: beforeAfterCode.after }];
+
+export const HomePage = memo(function HomePage() {
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
@@ -207,7 +322,7 @@ export function HomePage() {
                 lines={terminalLines}
                 title="Terminal — ReactCheck"
                 autoPlay={true}
-                loop={true}
+                loop={false}
                 typingSpeed={25}
                 className="shadow-2xl glow-primary"
               />
@@ -235,25 +350,15 @@ export function HomePage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="p-6 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors group"
-                >
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <Icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </motion.div>
-              );
-            })}
+            {features.map((feature, index) => (
+              <FeatureCard
+                key={feature.title}
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+                index={index}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -274,45 +379,15 @@ export function HomePage() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                step: '01',
-                title: 'Scan',
-                description: 'Point ReactCheck at your app and interact normally. It monitors every component render.',
-                code: 'npx @oxog/react-check localhost:3000',
-              },
-              {
-                step: '02',
-                title: 'Diagnose',
-                description: 'See which components re-render excessively and understand the render chains.',
-                code: 'ProductCard: 127 renders (expected: 12)',
-              },
-              {
-                step: '03',
-                title: 'Fix',
-                description: 'Get specific, copy-paste code fixes for each performance issue found.',
-                code: 'const ProductCard = memo(ProductCard);',
-              },
-            ].map((item, index) => (
-              <motion.div
+            {steps.map((item, index) => (
+              <StepCard
                 key={item.step}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="relative"
-              >
-                <div className="text-6xl font-bold text-primary/10 absolute -top-4 -left-2">
-                  {item.step}
-                </div>
-                <div className="relative pt-8">
-                  <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground mb-4">{item.description}</p>
-                  <code className="block px-4 py-2 bg-card rounded-lg text-sm font-mono text-primary border border-border">
-                    {item.code}
-                  </code>
-                </div>
-              </motion.div>
+                step={item.step}
+                title={item.title}
+                description={item.description}
+                code={item.code}
+                index={index}
+              />
             ))}
           </div>
         </div>
@@ -347,11 +422,7 @@ export function HomePage() {
                 <span className="text-sm text-muted-foreground">127 renders detected</span>
               </div>
               <IDEWindow
-                files={[{
-                  name: 'ProductCard.tsx',
-                  language: 'typescript',
-                  code: beforeAfterCode.before,
-                }]}
+                files={beforeFiles}
                 title="VS Code — ProductCard.tsx"
                 highlightLines={[1, 2]}
               />
@@ -368,11 +439,7 @@ export function HomePage() {
                 <span className="text-sm text-muted-foreground">12 renders (optimized)</span>
               </div>
               <IDEWindow
-                files={[{
-                  name: 'ProductCard.tsx',
-                  language: 'typescript',
-                  code: beforeAfterCode.after,
-                }]}
+                files={afterFiles}
                 title="VS Code — ProductCard.tsx"
                 highlightLines={[1, 3]}
               />
@@ -413,23 +480,13 @@ export function HomePage() {
                 </thead>
                 <tbody>
                   {comparisonData.map((row, index) => (
-                    <tr key={row.feature} className={index % 2 === 0 ? 'bg-background' : 'bg-card/50'}>
-                      <td className="px-6 py-4 text-sm">{row.feature}</td>
-                      <td className="px-6 py-4 text-center">
-                        {row.reactcheck ? (
-                          <CheckCircle2 className="w-5 h-5 text-healthy mx-auto" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-critical mx-auto" />
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {row.others ? (
-                          <CheckCircle2 className="w-5 h-5 text-muted-foreground mx-auto" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-critical/50 mx-auto" />
-                        )}
-                      </td>
-                    </tr>
+                    <ComparisonRow
+                      key={row.feature}
+                      feature={row.feature}
+                      reactcheck={row.reactcheck}
+                      others={row.others}
+                      index={index}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -476,4 +533,4 @@ export function HomePage() {
       </section>
     </div>
   );
-}
+});

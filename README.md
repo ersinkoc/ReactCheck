@@ -1,6 +1,12 @@
 # ReactCheck
 
+[![npm version](https://img.shields.io/npm/v/@oxog/react-check.svg)](https://www.npmjs.com/package/@oxog/react-check)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/node/v/@oxog/react-check.svg)](https://nodejs.org)
+
 A zero-dependency React performance scanner that detects unnecessary re-renders, analyzes render chains, and provides actionable fix suggestions.
+
+**[Documentation](https://reactcheck.oxog.dev)** | **[npm](https://www.npmjs.com/package/@oxog/react-check)** | **[GitHub](https://github.com/ersinkoc/react-check)**
 
 ## Features
 
@@ -10,8 +16,8 @@ A zero-dependency React performance scanner that detects unnecessary re-renders,
 - **Multiple Report Formats**: Export reports as HTML, JSON, or Markdown
 - **Framework Detection**: Automatic detection and framework-specific tips for Next.js, Remix, Vite, CRA, Gatsby
 - **Interactive TUI**: Terminal-based UI for real-time monitoring
-- **WebUI Dashboard**: Real-time web dashboard with live updates
-- **Browser Overlay**: Visual overlay showing component render statistics
+- **WebUI Dashboard**: Real-time web dashboard with live updates at localhost:3199
+- **Browser Overlay**: Visual overlay showing component render statistics with severity colors
 - **Zero Dependencies**: Core functionality has no external dependencies
 
 ## Installation
@@ -118,7 +124,7 @@ Options:
   --exclude <patterns>    Component patterns to exclude
   --no-tui                Disable TUI, use simple output
   -W, --webui             Enable WebUI dashboard
-  --webui-port <port>     WebUI dashboard port (default: 3100)
+  --webui-port <port>     WebUI dashboard port (default: 3199)
 ```
 
 ### `report <input>`

@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-31
+
+### Added
+
+- WebUI mode now automatically shows visible browser window for user interaction
+- Improved headless mode prompt with clearer default (No = visible browser)
+
+### Changed
+
+- WebUI mode skips headless browser question (always shows browser for interaction)
+- Default headless answer changed from Yes to No for better user experience
+- Updated homepage URL to reactcheck.oxog.dev
+- Reorganized documentation files into /docs folder
+
+### Fixed
+
+- Fixed browser window not appearing in WebUI mode due to default headless=true
+- Memory leak from excessive WebSocket broadcasts (throttled to 500ms intervals)
+- Render event flooding (limited to max 10 broadcasts per second)
+- Overlay initialization infinite loop (added max 10 retries)
+
+## [1.1.6] - 2025-12-31
+
+### Fixed
+
+- Improved React DevTools hook integration for better render detection
+- Fixed overlay initialization timing issues
+
 ## [1.1.5] - 2025-12-31
 
 ### Fixed
@@ -57,7 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - WebSocket-based live updates
   - Auto-opens in default browser
   - `--webui` flag to enable dashboard
-  - `--webui-port` option for custom port (default: 3100)
+  - `--webui-port` option for custom port (default: 3099)
 
 - **Browser Overlay Enhancements**: Visual feedback for component renders
   - Flash effect with colored background on each render

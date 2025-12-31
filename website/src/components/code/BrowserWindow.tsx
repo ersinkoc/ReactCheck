@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, RotateCw, Lock, Star, MoreHorizontal } from 'lucide-react';
 
@@ -9,7 +9,7 @@ interface BrowserWindowProps {
   className?: string;
 }
 
-export function BrowserWindow({
+export const BrowserWindow = memo(function BrowserWindow({
   url = "http://localhost:3000",
   title = "React App",
   children,
@@ -70,4 +70,4 @@ export function BrowserWindow({
       </div>
     </div>
   );
-}
+});

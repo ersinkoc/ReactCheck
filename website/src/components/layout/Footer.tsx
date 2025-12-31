@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Github, Heart } from 'lucide-react';
 
@@ -21,7 +22,16 @@ const footerLinks = {
   ],
 };
 
-export function Footer() {
+// Memoize icons to prevent re-renders
+const GithubIcon = memo(() => <Github className="w-5 h-5" />);
+GithubIcon.displayName = 'GithubIcon';
+
+const HeartIcon = memo(() => <Heart className="w-4 h-4 text-critical" />);
+HeartIcon.displayName = 'HeartIcon';
+
+export const Footer = memo(function Footer() {
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
+
   return (
     <footer className="bg-card border-t border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -43,7 +53,7 @@ export function Footer() {
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Github className="w-5 h-5" />
+                <GithubIcon />
               </a>
             </div>
           </div>
@@ -116,10 +126,10 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ReactCheck. MIT License.
+            © {currentYear} ReactCheck. MIT License.
           </p>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
-            Made with <Heart className="w-4 h-4 text-critical" /> by{' '}
+            Made with <HeartIcon /> by{' '}
             <a
               href="https://github.com/ersinkoc"
               target="_blank"
@@ -133,4 +143,4 @@ export function Footer() {
       </div>
     </footer>
   );
-}
+});

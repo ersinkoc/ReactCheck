@@ -49,6 +49,9 @@ reactcheck-reports/
 *.report.json
 *.report.md
 
+# Unused folders
+docs-site/
+
 # Puppeteer
 .local-chromium/
 

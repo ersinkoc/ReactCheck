@@ -178,7 +178,7 @@ export function parseScanOptions(args: ParsedArgs): ScanOptions {
     watch: getBooleanFlag(args, 'watch'),
     configPath: getStringFlag(args, 'config'),
     webui: getBooleanFlag(args, 'webui'),
-    webuiPort: getNumberFlag(args, 'webui-port') ?? 3100,
+    webuiPort: getNumberFlag(args, 'webui-port') ?? 3199,
   };
 }
 
@@ -317,8 +317,8 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
   // Set up scanner event handlers
   setupScannerEvents(session);
 
-  // Start TUI if not silent and not proxy mode and stdin is a TTY
-  const useTUI = !mergedOptions.silent && !mergedOptions.proxy && process.stdin.isTTY;
+  // Start TUI if not silent and not proxy mode and not webui mode and stdin is a TTY
+  const useTUI = !mergedOptions.silent && !mergedOptions.proxy && !mergedOptions.webui && process.stdin.isTTY;
   if (useTUI) {
     session.tui = new TUI(mergedOptions.target);
     setupTUIEvents(session);
@@ -398,8 +398,11 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
       const webuiUrl = session.webui.getUrl();
       logger.info(`WebUI dashboard: ${webuiUrl}`);
 
-      // Open browser automatically
+      // Open WebUI dashboard in default browser
       openBrowser(webuiUrl);
+
+      // Note: Puppeteer will still launch below to open the target URL with injection
+      logger.info('WebUI dashboard opened, Puppeteer will open target URL next...');
     }
 
     // Check if proxy mode
@@ -461,8 +464,9 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
       session.browser.setInjectionScript(injectionScript);
 
       session.browser.on('console', ({ type, text }) => {
-        if (text.includes('[ReactCheck]')) {
-          logger.info(`Browser: ${text}`);
+        // Log all ReactCheck messages and errors
+        if (text.includes('[ReactCheck]') || text.includes('ReactCheck') || type === 'error') {
+          logger.info(`Browser [${type}]: ${text}`);
         }
       });
 
@@ -470,9 +474,33 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
         logger.error('Browser error:', error.message);
       });
 
-      logger.info('Launching browser...');
+      logger.info('Launching Puppeteer browser for target URL...');
       await session.browser.launch();
-      logger.info('Browser launched, scanning...');
+      logger.info('Puppeteer browser launched successfully, now scanning target...');
+
+      // Debug: Check if overlay exists in DOM after page load
+      setTimeout(async () => {
+        try {
+          const page = session.browser?.getPage();
+          if (page) {
+            const overlayCheck = await page.evaluate(() => {
+              const host = document.getElementById('reactcheck-overlay-host');
+              const injected = (window as unknown as { __REACTCHECK_INJECTED__?: boolean }).__REACTCHECK_INJECTED__;
+              const reactcheck = (window as unknown as { __REACTCHECK__?: unknown }).__REACTCHECK__;
+              return {
+                hostExists: !!host,
+                injected: !!injected,
+                reactcheckExists: !!reactcheck,
+                url: window.location.href,
+              };
+            });
+            // eslint-disable-next-line no-console
+            console.log('[ReactCheck DEBUG] Overlay check:', JSON.stringify(overlayCheck));
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      }, 3000);
     }
 
     // Wait based on mode
@@ -862,12 +890,22 @@ function setupWebUIEvents(session: ScanSession): void {
   const { scanner, webui } = session;
   if (!webui) return;
 
+  // Throttle WebUI updates to prevent flooding
+  let lastBroadcast = 0;
+  const BROADCAST_INTERVAL = 500; // Only broadcast every 500ms
+
   // Forward scanner events to WebUI
   scanner.on('render', (render: RenderInfo) => {
     webui.addRenderEvent(render);
-    webui.updateSummary(scanner.getSummary());
-    webui.updateComponents(scanner.getSnapshot());
-    webui.updateFps(scanner.getFps());
+
+    // Throttle summary/component updates
+    const now = Date.now();
+    if (now - lastBroadcast >= BROADCAST_INTERVAL) {
+      lastBroadcast = now;
+      webui.updateSummary(scanner.getSummary());
+      webui.updateComponents(scanner.getSnapshot());
+      webui.updateFps(scanner.getFps());
+    }
   });
 
   scanner.on('chain', (chain) => {

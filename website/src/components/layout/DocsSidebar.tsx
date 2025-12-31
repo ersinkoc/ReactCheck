@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { ChevronRight } from 'lucide-react';
@@ -16,7 +17,7 @@ interface DocsSidebarProps {
   className?: string;
 }
 
-export function DocsSidebar({ sections, className }: DocsSidebarProps) {
+export const DocsSidebar = memo(function DocsSidebar({ sections, className }: DocsSidebarProps) {
   const location = useLocation();
 
   return (
@@ -64,4 +65,4 @@ export function DocsSidebar({ sections, className }: DocsSidebarProps) {
       </div>
     </aside>
   );
-}
+});

@@ -135,15 +135,12 @@ export class BrowserLauncher extends EventEmitter<BrowserEvents> {
       this.setupPageHandlers();
 
       // Inject script before navigation if provided
+      // Note: The injection script already contains the port configuration
       if (this.injectionScript) {
+        logger.debug('Injecting ReactCheck script into page...');
         await this.page.evaluateOnNewDocument(this.injectionScript);
+        logger.debug('Injection script registered');
       }
-
-      // Set WebSocket port for injection script
-      const wsPort = this.options.wsPort;
-      await this.page.evaluateOnNewDocument(`
-        window.__REACTCHECK_PORT__ = ${wsPort};
-      `);
 
       this.emit('launched', undefined);
       logger.info('Browser launched');

@@ -1,6 +1,6 @@
 {
   "name": "@oxog/react-check",
-  "version": "1.1.6",
+  "version": "1.2.0",
   "description": "Scan, diagnose, and fix React performance issues. CLI tool and runtime analyzer with actionable fix suggestions.",
   "keywords": [
     "react",
@@ -10,17 +10,19 @@
     "optimization",
     "render",
     "cli",
-    "devtools"
+    "devtools",
+    "react-devtools",
+    "monitoring"
   ],
   "author": "ersinkoc",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ersinkoc/reactcheck"
+    "url": "https://github.com/ersinkoc/react-check.git"
   },
-  "homepage": "https://ersinkoc.github.io/reactcheck",
+  "homepage": "https://reactcheck.oxog.dev",
   "bugs": {
-    "url": "https://github.com/ersinkoc/reactcheck/issues"
+    "url": "https://github.com/ersinkoc/react-check/issues"
   },
   "type": "module",
   "main": "./dist/index.cjs",
