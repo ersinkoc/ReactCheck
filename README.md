@@ -152,6 +152,42 @@ npm run demo:scan
 npm run demo:scan:webui
 ```
 
+## TUI Keyboard Shortcuts
+
+While scanning with the interactive TUI, use these keyboard shortcuts:
+
+| Key | Action |
+|-----|--------|
+| `j` / `↓` | Move selection down |
+| `k` / `↑` | Move selection up |
+| `Enter` | View component details |
+| `Esc` | Go back to list view |
+| `f` | Show fix suggestions for selected component |
+| `c` | Show render chain view |
+| `o` | Toggle browser overlay on/off |
+| `r` | Generate report |
+| `p` | Pause/resume scanning |
+| `q` | Quit |
+
+## Browser Overlay
+
+ReactCheck injects a visual overlay into the target page that highlights component renders in real-time:
+
+- **Flash Effect**: Components flash with a colored background on each render
+- **Border Highlight**: Pulsing border shows render boundaries
+- **Render Badges**: Small badges show component name and render count
+- **Severity Colors**: Critical (red), Warning (yellow), Healthy (green)
+
+### Toggle Overlay
+
+You can toggle the overlay on/off in several ways:
+
+1. **TUI**: Press `o` to toggle overlay visibility
+2. **Browser Console**: Run `__REACTCHECK__.toggleOverlay()`
+3. **WebUI Dashboard**: Click the overlay toggle button
+
+When overlay is disabled, render tracking continues but visual effects are hidden.
+
 ## WebUI Dashboard
 
 The WebUI dashboard provides a real-time web interface for monitoring React performance:

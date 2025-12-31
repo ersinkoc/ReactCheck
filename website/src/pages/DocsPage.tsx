@@ -15,6 +15,14 @@ const sidebarSections: SidebarSection[] = [
     ],
   },
   {
+    title: 'Features',
+    items: [
+      { name: 'WebUI Dashboard', href: '#webui-dashboard' },
+      { name: 'Browser Overlay', href: '#browser-overlay' },
+      { name: 'TUI Controls', href: '#tui-controls' },
+    ],
+  },
+  {
     title: 'Concepts',
     items: [
       { name: 'How It Works', href: '#how-it-works' },
@@ -35,7 +43,7 @@ const sidebarSections: SidebarSection[] = [
 const quickStartTerminal = [
   { type: 'command' as const, text: 'npx @oxog/react-check localhost:3000' },
   { type: 'empty' as const, text: '' },
-  { type: 'output' as const, text: '<span style="color: #3b82f6;">ReactCheck v1.0.0</span>' },
+  { type: 'output' as const, text: '<span style="color: #3b82f6;">ReactCheck v1.1.0</span>' },
   { type: 'output' as const, text: 'Starting browser...' },
   { type: 'output' as const, text: '<span style="color: #22c55e;">✓</span> Connected to localhost:3000' },
   { type: 'output' as const, text: '<span style="color: #22c55e;">✓</span> React 18.2.0 detected' },
@@ -217,6 +225,106 @@ npm install -D @oxog/react-check`}
                     Component is performing well within expected parameters.
                   </p>
                 </div>
+              </div>
+            </section>
+
+            {/* WebUI Dashboard */}
+            <section id="webui-dashboard" className="mb-16 scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-4">WebUI Dashboard</h2>
+              <p className="text-muted-foreground mb-6">
+                ReactCheck includes a real-time web dashboard that opens in your browser alongside the TUI.
+              </p>
+
+              <CodeBlock
+                code={`# Enable WebUI dashboard
+npx @oxog/react-check scan --webui http://localhost:3000
+
+# Custom port
+npx @oxog/react-check scan --webui --webui-port 8080 http://localhost:3000`}
+                language="bash"
+                showLineNumbers={false}
+              />
+
+              <div className="mt-6 grid sm:grid-cols-2 gap-4">
+                {[
+                  { title: 'Live Summary', desc: 'Real-time component, render, and FPS counts' },
+                  { title: 'Component Table', desc: 'Sortable and filterable component list' },
+                  { title: 'Render Events', desc: 'Live stream of render events as they occur' },
+                  { title: 'Render Chains', desc: 'Visualization of cascade render chains' },
+                ].map((item) => (
+                  <div key={item.title} className="p-4 rounded-lg bg-card border border-border">
+                    <h4 className="font-semibold text-primary mb-1">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Browser Overlay */}
+            <section id="browser-overlay" className="mb-16 scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-4">Browser Overlay</h2>
+              <p className="text-muted-foreground mb-6">
+                ReactCheck injects a visual overlay into the target page that highlights component renders in real-time.
+              </p>
+
+              <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                {[
+                  { title: 'Flash Effect', desc: 'Components flash with colored background on each render' },
+                  { title: 'Border Highlight', desc: 'Pulsing border shows render boundaries' },
+                  { title: 'Render Badges', desc: 'Small badges show component name and render count' },
+                  { title: 'Severity Colors', desc: 'Critical (red), Warning (yellow), Healthy (green)' },
+                ].map((item) => (
+                  <div key={item.title} className="p-4 rounded-lg bg-card border border-border">
+                    <h4 className="font-semibold text-primary mb-1">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <h3 className="text-lg font-semibold mb-3">Toggle Overlay</h3>
+              <p className="text-muted-foreground mb-4">
+                You can toggle the overlay on/off while scanning:
+              </p>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>• Press <kbd className="px-2 py-1 bg-card rounded border border-border text-xs">o</kbd> in TUI to toggle</li>
+                <li>• Run <code className="px-2 py-1 bg-card rounded text-sm">__REACTCHECK__.toggleOverlay()</code> in browser console</li>
+              </ul>
+            </section>
+
+            {/* TUI Controls */}
+            <section id="tui-controls" className="mb-16 scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-4">TUI Keyboard Controls</h2>
+              <p className="text-muted-foreground mb-6">
+                The interactive TUI provides keyboard shortcuts for navigation and control.
+              </p>
+
+              <div className="rounded-lg border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-card">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold w-24">Key</th>
+                      <th className="text-left px-4 py-3 font-semibold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { key: 'j/k or ↑↓', action: 'Navigate component list' },
+                      { key: 'Enter', action: 'View component details' },
+                      { key: 'Esc', action: 'Go back to list view' },
+                      { key: 'f', action: 'Show fix suggestions for selected component' },
+                      { key: 'c', action: 'Show render chain view' },
+                      { key: 'o', action: 'Toggle browser overlay on/off' },
+                      { key: 'r', action: 'Generate report' },
+                      { key: 'p', action: 'Pause/resume scanning' },
+                      { key: 'q', action: 'Quit' },
+                    ].map((row, i) => (
+                      <tr key={row.key} className={i % 2 === 0 ? 'bg-background' : 'bg-card/50'}>
+                        <td className="px-4 py-3 font-mono text-primary">{row.key}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{row.action}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </section>
 

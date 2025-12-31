@@ -24,6 +24,7 @@ const sidebarSections: SidebarSection[] = [
       { name: 'Filtering', href: '#filtering' },
       { name: 'Thresholds', href: '#thresholds' },
       { name: 'WebUI Dashboard', href: '#webui' },
+      { name: 'Browser Overlay', href: '#overlay' },
     ],
   },
   {
@@ -153,14 +154,16 @@ npx @oxog/react-check scan --webui --webui-port 8080 http://localhost:3000`}
               <h3 className="text-lg font-semibold mt-8 mb-4">Keyboard Controls</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { key: 'q', action: 'Quit' },
-                  { key: 'p', action: 'Pause/Resume' },
-                  { key: 'r', action: 'Reset stats' },
-                  { key: 's', action: 'Save report' },
-                  { key: '↑↓', action: 'Navigate' },
+                  { key: 'j/k', action: 'Navigate list' },
+                  { key: '↑↓', action: 'Navigate list' },
                   { key: 'Enter', action: 'View details' },
+                  { key: 'Esc', action: 'Go back' },
                   { key: 'f', action: 'Show fixes' },
-                  { key: 'c', action: 'Copy fix' },
+                  { key: 'c', action: 'Render chains' },
+                  { key: 'o', action: 'Toggle overlay' },
+                  { key: 'r', action: 'Generate report' },
+                  { key: 'p', action: 'Pause/Resume' },
+                  { key: 'q', action: 'Quit' },
                 ].map((item) => (
                   <div key={item.key} className="p-3 rounded-lg bg-card border border-border text-center">
                     <kbd className="px-2 py-1 bg-muted rounded text-sm font-mono">{item.key}</kbd>
@@ -326,6 +329,53 @@ npx @oxog/react-check scan --webui --silent http://localhost:3000`}
               <div className="mt-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
                 <p className="text-sm">
                   <strong className="text-primary">Tip:</strong> The WebUI dashboard auto-opens in your default browser. You can run both TUI and WebUI simultaneously for the best of both worlds.
+                </p>
+              </div>
+            </section>
+
+            {/* Browser Overlay */}
+            <section id="overlay" className="mb-16 scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-4">Browser Overlay</h2>
+              <p className="text-muted-foreground mb-6">
+                ReactCheck injects a visual overlay into the target page that highlights component renders in real-time with flash effects and border highlights.
+              </p>
+
+              <h3 className="text-lg font-semibold mt-4 mb-4">Overlay Features</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { title: 'Flash Effect', desc: 'Components flash with a colored background on each render' },
+                  { title: 'Border Highlight', desc: 'Pulsing border shows render boundaries' },
+                  { title: 'Render Badges', desc: 'Small badges show component name and render count' },
+                  { title: 'Severity Colors', desc: 'Critical (red), Warning (yellow), Healthy (green)' },
+                ].map((item) => (
+                  <div key={item.title} className="p-4 rounded-lg bg-card border border-border">
+                    <h4 className="font-semibold text-primary mb-1">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <h3 className="text-lg font-semibold mt-8 mb-4">Toggle Overlay</h3>
+              <p className="text-muted-foreground mb-4">
+                You can toggle the overlay on/off while scanning continues:
+              </p>
+
+              <div className="space-y-3">
+                <div className="p-4 rounded-lg bg-card border border-border">
+                  <h4 className="font-semibold mb-2">From TUI</h4>
+                  <p className="text-sm text-muted-foreground">Press <kbd className="px-2 py-1 bg-muted rounded text-sm font-mono">o</kbd> to toggle overlay visibility</p>
+                </div>
+                <div className="p-4 rounded-lg bg-card border border-border">
+                  <h4 className="font-semibold mb-2">From Browser Console</h4>
+                  <code className="block px-3 py-2 bg-background rounded text-sm font-mono">
+                    __REACTCHECK__.toggleOverlay()
+                  </code>
+                </div>
+              </div>
+
+              <div className="mt-4 p-4 rounded-lg bg-info/10 border border-info/20">
+                <p className="text-sm">
+                  <strong className="text-info">Note:</strong> When overlay is disabled, render tracking continues in the background. Only the visual effects are hidden.
                 </p>
               </div>
             </section>

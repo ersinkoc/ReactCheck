@@ -19,6 +19,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--webui` flag to enable dashboard
   - `--webui-port` option for custom port (default: 3100)
 
+- **Browser Overlay Enhancements**: Visual feedback for component renders
+  - Flash effect with colored background on each render
+  - Pulsing border highlight shows render boundaries
+  - Render badges showing component name and count
+  - Severity-based colors (critical=red, warning=yellow, healthy=green)
+  - Toggle overlay on/off with `o` key in TUI
+  - Console access via `__REACTCHECK__.toggleOverlay()`
+
+- **TUI Keyboard Shortcuts**:
+  - `o` - Toggle browser overlay on/off
+  - `j/k` or arrows - Navigate component list
+  - `Enter` - View component details
+  - `f` - Show fix suggestions
+  - `c` - Show render chain view
+  - `r` - Generate report
+  - `p` - Pause/resume scanning
+  - `q` - Quit
+
 - **Demo Scripts**: Added npm scripts for running demo React app
   - `npm run demo` - Install and start demo app
   - `npm run demo:dev` - Start demo development server
