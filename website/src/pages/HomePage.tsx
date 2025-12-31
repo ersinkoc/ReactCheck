@@ -22,7 +22,7 @@ import {
 const terminalLines = [
   { type: 'command' as const, text: 'npx @oxog/react-check localhost:3000' },
   { type: 'empty' as const, text: '' },
-  { type: 'output' as const, text: '<span style="color: #3b82f6;">ReactCheck v1.1.2</span>' },
+  { type: 'output' as const, text: '<span style="color: #3b82f6;">ReactCheck v1.1.3</span>' },
   { type: 'output' as const, text: 'Starting browser...' },
   { type: 'output' as const, text: '<span style="color: #22c55e;">✓</span> Connected to localhost:3000' },
   { type: 'output' as const, text: '<span style="color: #22c55e;">✓</span> React 18.2.0 detected' },

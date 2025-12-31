@@ -27,9 +27,48 @@ import { readTextFile } from '../../utils/fs.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { WebUIServer } from '../../webui/server.js';
-import { exec } from 'node:child_process';
+import { exec, execSync } from 'node:child_process';
 
 const logger = new Logger({ prefix: 'scan', level: LogLevel.INFO });
+
+/**
+ * Install puppeteer automatically
+ * @returns true if installation succeeded
+ */
+async function installPuppeteer(): Promise<boolean> {
+  // eslint-disable-next-line no-console
+  console.log('');
+  // eslint-disable-next-line no-console
+  console.log(colors.cyan + '📦 Puppeteer is required for browser automation.' + colors.reset);
+  // eslint-disable-next-line no-console
+  console.log(colors.gray + '   Installing puppeteer... (this may take a minute)' + colors.reset);
+  // eslint-disable-next-line no-console
+  console.log('');
+
+  try {
+    // Try to install puppeteer
+    execSync('npm install puppeteer --no-save', {
+      stdio: 'inherit',
+      timeout: 300000, // 5 minutes timeout
+    });
+
+    // eslint-disable-next-line no-console
+    console.log('');
+    // eslint-disable-next-line no-console
+    console.log(colors.green + '✓ Puppeteer installed successfully!' + colors.reset);
+    // eslint-disable-next-line no-console
+    console.log('');
+
+    return true;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log('');
+    logger.error('Failed to install puppeteer automatically.');
+    logger.info('Please install it manually: npm install puppeteer');
+    logger.info('Or use --proxy mode: react-check scan --proxy <url>');
+    return false;
+  }
+}
 
 /**
  * Scan command options derived from CLI args
@@ -357,13 +396,22 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
       console.log('');
     } else {
       // Browser mode - launch Puppeteer
-      const hasPuppeteer = await isPuppeteerAvailable();
+      let hasPuppeteer = await isPuppeteerAvailable();
 
       if (!hasPuppeteer) {
-        logger.error('Puppeteer is not installed. Install it with: npm install puppeteer');
-        logger.info('Alternatively, use --proxy mode to scan with your own browser');
-        await session.wsServer.stop();
-        return 2;
+        // Try to install puppeteer automatically
+        const installed = await installPuppeteer();
+        if (!installed) {
+          await session.wsServer.stop();
+          return 2;
+        }
+        // Check again after installation
+        hasPuppeteer = await isPuppeteerAvailable();
+        if (!hasPuppeteer) {
+          logger.error('Puppeteer installation failed. Please try manually: npm install puppeteer');
+          await session.wsServer.stop();
+          return 2;
+        }
       }
 
       // Get injection script
@@ -634,7 +682,7 @@ function generateReport(session: ScanSession): SessionReport {
   };
 
   return {
-    version: '1.1.2',
+    version: '1.1.3',
     generated: formatDate(),
     session: sessionInfo,
     summary: exported.stats.summary,
