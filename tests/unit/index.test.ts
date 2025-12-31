@@ -10,12 +10,28 @@ beforeAll(() => {
   // @ts-expect-error - mocking for test
   global.window = {
     __REACTCHECK_INJECTED__: true,
+    location: {
+      href: 'http://localhost:3000',
+      origin: 'http://localhost:3000',
+    },
     document: {
+      readyState: 'complete',
       querySelector: () => null,
-      createElement: () => ({}),
+      createElement: () => ({
+        style: {},
+        appendChild: () => {},
+        setAttribute: () => {},
+      }),
       body: {
         appendChild: () => {},
       },
+      addEventListener: () => {},
+    },
+    addEventListener: () => {},
+    WebSocket: class MockWebSocket {
+      readyState = 0;
+      send() {}
+      close() {}
     },
   };
 });

@@ -105,7 +105,9 @@ describe('Fiber Utilities', () => {
         tag: FiberTag.ForwardRef,
         type: { render: InnerComponent },
       });
-      expect(getComponentName(fiber)).toBe('ForwardRef(InnerComponent)');
+      // ForwardRef now returns inner component name directly (not wrapped)
+      // This prevents ForwardRef flooding in render tracking
+      expect(getComponentName(fiber)).toBe('InnerComponent');
     });
 
     it('should handle Memo component', () => {
