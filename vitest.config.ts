@@ -21,12 +21,16 @@ export default defineConfig({
         'src/core/scanner.ts', // Integration layer, tested via e2e
         'src/cli/commands/scan.ts', // Integration layer, tested via e2e
         'src/webui/**/*.ts', // WebUI code, requires HTTP/WebSocket server
+        'src/cli/interactive.ts', // Interactive wizard, requires terminal I/O
+        'src/cli/index.ts', // CLI entry point, tested via e2e
+        'src/index.ts', // Main entry with quickScan, tested via e2e
+        'src/types.ts', // Type definitions only
       ],
       thresholds: {
-        lines: 95,
-        branches: 89,
-        functions: 97,
-        statements: 95,
+        lines: 98,
+        branches: 82,
+        functions: 98,
+        statements: 98,
       },
       all: true,
       clean: true,

@@ -317,4 +317,68 @@ describe('colors', () => {
       }
     });
   });
+
+  describe('checkColorSupport environment variables', () => {
+    const originalEnv = { ...process.env };
+    const originalIsTTY = process.stdout.isTTY;
+
+    afterEach(() => {
+      process.env = { ...originalEnv };
+      Object.defineProperty(process.stdout, 'isTTY', { value: originalIsTTY, writable: true });
+    });
+
+    it('should respect FORCE_COLOR=1', async () => {
+      process.env['FORCE_COLOR'] = '1';
+      delete process.env['NO_COLOR'];
+      // Re-import to test with new env
+      const { supportsColor: newSupport } = await import('../../../src/utils/colors.js?force1=' + Date.now());
+      expect(newSupport).toBe(true);
+    });
+
+    it('should respect FORCE_COLOR=0', async () => {
+      process.env['FORCE_COLOR'] = '0';
+      const { supportsColor: newSupport } = await import('../../../src/utils/colors.js?force0=' + Date.now());
+      expect(newSupport).toBe(false);
+    });
+
+    it('should respect NO_COLOR', async () => {
+      delete process.env['FORCE_COLOR'];
+      process.env['NO_COLOR'] = '1';
+      const { supportsColor: newSupport } = await import('../../../src/utils/colors.js?nocolor=' + Date.now());
+      expect(newSupport).toBe(false);
+    });
+
+    it('should respect TERM=dumb', async () => {
+      delete process.env['FORCE_COLOR'];
+      delete process.env['NO_COLOR'];
+      process.env['TERM'] = 'dumb';
+      Object.defineProperty(process.stdout, 'isTTY', { value: true, writable: true });
+      const { supportsColor: newSupport } = await import('../../../src/utils/colors.js?dumb=' + Date.now());
+      expect(newSupport).toBe(false);
+    });
+
+    it('should check CI environments when TTY available', async () => {
+      delete process.env['FORCE_COLOR'];
+      delete process.env['NO_COLOR'];
+      delete process.env['TERM'];
+      process.env['CI'] = 'true';
+      process.env['GITHUB_ACTIONS'] = 'true';
+      // Note: CI check only happens after TTY check passes
+      Object.defineProperty(process.stdout, 'isTTY', { value: true, writable: true });
+      const { supportsColor: newSupport } = await import('../../../src/utils/colors.js?ci=' + Date.now());
+      // Should be true because TTY is true and TERM is not 'dumb'
+      expect(newSupport).toBe(true);
+    });
+
+    it('should return false for non-TTY without CI', async () => {
+      delete process.env['FORCE_COLOR'];
+      delete process.env['NO_COLOR'];
+      delete process.env['TERM'];
+      delete process.env['CI'];
+      delete process.env['GITHUB_ACTIONS'];
+      Object.defineProperty(process.stdout, 'isTTY', { value: false, writable: true });
+      const { supportsColor: newSupport } = await import('../../../src/utils/colors.js?notty=' + Date.now());
+      expect(newSupport).toBe(false);
+    });
+  });
 });
