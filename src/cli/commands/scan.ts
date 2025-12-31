@@ -33,9 +33,10 @@ const logger = new Logger({ prefix: 'scan', level: LogLevel.INFO });
 
 /**
  * Install puppeteer automatically
- * @returns true if installation succeeded
+ * @param wsServer - WebSocket server to stop before restart
+ * @returns true if installation succeeded and should continue, false to stop
  */
-async function installPuppeteer(): Promise<boolean> {
+async function installPuppeteer(wsServer?: WebSocketServer): Promise<boolean> {
   // eslint-disable-next-line no-console
   console.log('');
   // eslint-disable-next-line no-console
@@ -58,8 +59,37 @@ async function installPuppeteer(): Promise<boolean> {
     console.log(colors.green + '✓ Puppeteer installed successfully!' + colors.reset);
     // eslint-disable-next-line no-console
     console.log('');
+    // eslint-disable-next-line no-console
+    console.log(colors.cyan + '🔄 Restarting scan...' + colors.reset);
+    // eslint-disable-next-line no-console
+    console.log('');
 
-    return true;
+    // Stop WebSocket server before restart to free up the port
+    if (wsServer) {
+      await wsServer.stop();
+    }
+
+    // Restart the process to pick up the newly installed module
+    // ESM import cache cannot be cleared, so we need to respawn
+    const args = process.argv.slice(1);
+    const { spawn } = await import('node:child_process');
+    const child = spawn(process.execPath, args, {
+      stdio: 'inherit',
+      env: process.env,
+    });
+
+    // Wait for child to exit and propagate exit code
+    await new Promise<void>((resolve) => {
+      child.on('exit', (code) => {
+        process.exit(code ?? 0);
+      });
+      child.on('error', () => {
+        resolve();
+      });
+    });
+
+    // Return false to stop current execution (child process will continue)
+    return false;
   } catch (error) {
     // eslint-disable-next-line no-console
     console.log('');
@@ -396,20 +426,15 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
       console.log('');
     } else {
       // Browser mode - launch Puppeteer
-      let hasPuppeteer = await isPuppeteerAvailable();
+      const hasPuppeteer = await isPuppeteerAvailable();
 
       if (!hasPuppeteer) {
         // Try to install puppeteer automatically
-        const installed = await installPuppeteer();
+        // Pass wsServer so it can be stopped before process restart
+        const installed = await installPuppeteer(session.wsServer ?? undefined);
         if (!installed) {
-          await session.wsServer.stop();
-          return 2;
-        }
-        // Check again after installation
-        hasPuppeteer = await isPuppeteerAvailable();
-        if (!hasPuppeteer) {
-          logger.error('Puppeteer installation failed. Please try manually: npm install puppeteer');
-          await session.wsServer.stop();
+          // If installPuppeteer returns false, it either failed or restarted the process
+          // In restart case, we'll never reach here as process.exit is called
           return 2;
         }
       }
@@ -682,7 +707,7 @@ function generateReport(session: ScanSession): SessionReport {
   };
 
   return {
-    version: '1.1.3',
+    version: '1.1.5',
     generated: formatDate(),
     session: sessionInfo,
     summary: exported.stats.summary,

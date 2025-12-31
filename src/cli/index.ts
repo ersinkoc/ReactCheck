@@ -14,7 +14,7 @@ const logger = new Logger({ prefix: 'ReactCheck', level: LogLevel.INFO });
 /**
  * Package version
  */
-const VERSION = '1.1.3';
+const VERSION = '1.1.5';
 
 /**
  * Print version information
