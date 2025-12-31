@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-12-31
+
+### Fixed
+
+- SSL/HTTPS support: Browser now ignores certificate errors for self-signed certs
+- Improved scan stability: Better signal handling for Windows and non-TTY environments
+- TUI now properly detects TTY availability and falls back gracefully
+
 ## [1.1.1] - 2025-12-31
 
 ### Added

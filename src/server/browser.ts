@@ -110,6 +110,8 @@ export class BrowserLauncher extends EventEmitter<BrowserEvents> {
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
+        '--ignore-certificate-errors',
+        '--ignore-certificate-errors-spki-list',
         `--window-size=${this.options.width},${this.options.height}`,
         ...this.options.args,
       ];

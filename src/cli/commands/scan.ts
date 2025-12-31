@@ -239,8 +239,8 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
   // Set up scanner event handlers
   setupScannerEvents(session);
 
-  // Start TUI if not silent and not proxy mode
-  const useTUI = !mergedOptions.silent && !mergedOptions.proxy;
+  // Start TUI if not silent and not proxy mode and stdin is a TTY
+  const useTUI = !mergedOptions.silent && !mergedOptions.proxy && process.stdin.isTTY;
   if (useTUI) {
     session.tui = new TUI(mergedOptions.target);
     setupTUIEvents(session);
@@ -251,6 +251,8 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
       fps: session.scanner.getFps(),
     }));
     session.tui.start();
+  } else if (!mergedOptions.silent && !mergedOptions.proxy && !process.stdin.isTTY) {
+    logger.warn('TTY not available, TUI disabled. Use --silent for non-interactive mode.');
   }
 
   // Start WebUI if enabled
@@ -581,12 +583,22 @@ async function waitForQuit(session: ScanSession): Promise<void> {
 }
 
 /**
- * Wait for interrupt signal
+ * Wait for interrupt signal or user input
  */
 async function waitForSignal(): Promise<void> {
   return new Promise((resolve) => {
+    // On Windows, SIGINT/SIGTERM may not work reliably
+    // Also listen for stdin close
     process.once('SIGINT', () => resolve());
     process.once('SIGTERM', () => resolve());
+
+    // Keep process alive by preventing stdin from ending
+    if (process.stdin.isTTY) {
+      process.stdin.resume();
+    }
+
+    // Also resolve on stdin end (Ctrl+C on Windows)
+    process.stdin.once('end', () => resolve());
   });
 }
 
