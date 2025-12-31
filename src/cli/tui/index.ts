@@ -36,6 +36,8 @@ export interface TUIState {
   view: 'list' | 'details' | 'fix' | 'chain';
   /** Selected component for details */
   selectedComponent?: ComponentStats;
+  /** Whether overlay is enabled on target page */
+  overlayEnabled: boolean;
 }
 
 /**
@@ -56,6 +58,8 @@ export interface TUIEvents {
   selectComponent: ComponentStats;
   /** View changed */
   viewChange: TUIState['view'];
+  /** Overlay toggle requested */
+  toggleOverlay: void;
 }
 
 /**
@@ -81,6 +85,7 @@ function createDefaultState(target: string): TUIState {
     chains: [],
     paused: false,
     view: 'list',
+    overlayEnabled: true,
   };
 }
 
@@ -161,6 +166,7 @@ export class TUI extends EventEmitter<TUIEvents> {
     this.keys.bind('s', () => this.emit('openSettings', undefined));
     this.keys.bind('f', () => this.showFixSuggestions());
     this.keys.bind('c', () => this.showRenderChain());
+    this.keys.bind('o', () => this.emit('toggleOverlay', undefined));
   }
 
   /**
@@ -474,9 +480,10 @@ export class TUI extends EventEmitter<TUIEvents> {
    * Render footer with keybindings
    */
   private renderFooter(x: number, y: number, width: number): void {
+    const overlayStatus = this.state.overlayEnabled ? 'on' : 'off';
     const bindings = this.state.view === 'list'
-      ? '[j/k] Navigate  [Enter] Details  [f] Fix  [c] Chain  [r] Report  [p] Pause  [q] Quit'
-      : '[Esc] Back  [f] Fix  [c] Chain  [r] Report  [p] Pause  [q] Quit';
+      ? `[j/k] Navigate  [Enter] Details  [f] Fix  [c] Chain  [o] Overlay:${overlayStatus}  [r] Report  [p] Pause  [q] Quit`
+      : `[Esc] Back  [f] Fix  [c] Chain  [o] Overlay:${overlayStatus}  [r] Report  [p] Pause  [q] Quit`;
 
     this.screen.writeText(x, y, colors.gray + bindings + colors.reset, width);
   }

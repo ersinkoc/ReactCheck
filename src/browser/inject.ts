@@ -216,7 +216,45 @@ class ReactCheckInjector {
       case 'highlight':
         // Toggle highlight for specific component
         break;
+
+      case 'toggle-overlay':
+        this.handleToggleOverlay(message.payload.enabled);
+        break;
     }
+  }
+
+  /**
+   * Toggle overlay visibility
+   * @param enabled - Whether overlay should be visible
+   */
+  private handleToggleOverlay(enabled: boolean): void {
+    if (enabled) {
+      this.overlay.show();
+      this.overlay.configure({ highlightRenders: true });
+      // eslint-disable-next-line no-console
+      console.log('[ReactCheck] Overlay enabled');
+    } else {
+      this.overlay.hide();
+      this.overlay.configure({ highlightRenders: false });
+      // eslint-disable-next-line no-console
+      console.log('[ReactCheck] Overlay disabled');
+    }
+  }
+
+  /**
+   * Get overlay visibility status
+   * @returns Whether overlay is visible
+   */
+  isOverlayEnabled(): boolean {
+    return this.overlay.isVisible();
+  }
+
+  /**
+   * Toggle overlay (public method for console access)
+   */
+  toggleOverlay(): void {
+    const enabled = !this.overlay.isVisible();
+    this.handleToggleOverlay(enabled);
   }
 
   /**

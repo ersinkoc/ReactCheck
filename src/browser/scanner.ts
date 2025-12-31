@@ -16,6 +16,7 @@ import {
   isUserComponent,
   createRenderInfo,
 } from '../core/fiber.js';
+import { Overlay } from './overlay.js';
 
 /**
  * Browser scanner events
@@ -66,6 +67,9 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
   /** Window reference */
   private win: WindowWithReactDevTools;
 
+  /** Overlay for visual feedback */
+  private overlay: Overlay | null = null;
+
   /**
    * Create a new browser scanner
    * @param config - Scanner configuration
@@ -75,6 +79,78 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
     super();
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.win = win ?? (typeof window !== 'undefined' ? window as WindowWithReactDevTools : {} as WindowWithReactDevTools);
+  }
+
+  /**
+   * Get DOM element from fiber node
+   * React stores the DOM node in fiber.stateNode for host components
+   * or we need to walk down to find the first DOM node
+   * @param fiber - Fiber node
+   * @returns DOM Element or null
+   */
+  private getDOMElement(fiber: FiberNode): Element | null {
+    // First try stateNode directly
+    if (fiber.stateNode instanceof Element) {
+      return fiber.stateNode;
+    }
+
+    // Walk down to find the first DOM node (for function/class components)
+    let current: FiberNode | null = fiber.child;
+    while (current) {
+      if (current.stateNode instanceof Element) {
+        return current.stateNode;
+      }
+      // Try next child or sibling
+      if (current.child) {
+        current = current.child;
+      } else if (current.sibling) {
+        current = current.sibling;
+      } else {
+        // Go back up and try siblings
+        let parent = current.return;
+        while (parent && parent !== fiber && !parent.sibling) {
+          parent = parent.return;
+        }
+        current = parent && parent !== fiber ? parent.sibling : null;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Enable visual overlay for render highlighting
+   */
+  enableOverlay(): void {
+    if (this.overlay) return;
+
+    this.overlay = new Overlay({
+      enabled: true,
+      highlightRenders: this.config.highlightRenders ?? true,
+      animationSpeed: this.config.animationSpeed ?? 'fast',
+      showBadges: true,
+      showToolbar: true,
+    });
+
+    this.overlay.init();
+  }
+
+  /**
+   * Disable visual overlay
+   */
+  disableOverlay(): void {
+    if (this.overlay) {
+      this.overlay.destroy();
+      this.overlay = null;
+    }
+  }
+
+  /**
+   * Get overlay instance
+   * @returns Overlay instance or null
+   */
+  getOverlay(): Overlay | null {
+    return this.overlay;
   }
 
   /**
@@ -98,6 +174,7 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
     if (!this.running) return;
 
     this.unhookFromReact();
+    this.disableOverlay();
     this.running = false;
   }
 
@@ -260,6 +337,17 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
       props: fiber.memoizedProps,
       state: fiber.memoizedState,
     });
+
+    // Visual highlight if overlay is enabled
+    if (this.overlay && this.config.highlightRenders) {
+      const domElement = this.getDOMElement(fiber);
+      if (domElement) {
+        this.overlay.highlight(renderInfo, domElement);
+      } else {
+        // Still record render even without DOM element
+        this.overlay.recordRender(renderInfo);
+      }
+    }
 
     // Emit render event
     this.emit('render', renderInfo);

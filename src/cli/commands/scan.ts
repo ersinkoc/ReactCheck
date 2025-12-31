@@ -104,6 +104,12 @@ export function parseScanOptions(args: ParsedArgs): ScanOptions {
   };
 }
 
+/** WebSocket client interface */
+interface WSClient {
+  send: (data: string) => void;
+  on: (event: string, handler: () => void) => void;
+}
+
 /**
  * Scan session state
  */
@@ -130,6 +136,10 @@ interface ScanSession {
   chains: RenderChainInfo[];
   /** Fix suggestions collected */
   suggestions: FixSuggestion[];
+  /** Whether overlay is enabled on browser */
+  overlayEnabled: boolean;
+  /** Connected browser clients for sending messages */
+  browserClients: Set<WSClient>;
 }
 
 /**
@@ -222,6 +232,8 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
     active: true,
     chains: [],
     suggestions: [],
+    overlayEnabled: true,
+    browserClients: new Set(),
   };
 
   // Set up scanner event handlers
@@ -268,6 +280,9 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
     session.wsServer.on('connection', (client) => {
       logger.info('Browser connected');
 
+      // Add client to session for overlay toggle
+      session.browserClients.add(client);
+
       handleBrowserMessages(client, (message: BrowserMessage) => {
         switch (message.type) {
           case 'render':
@@ -278,6 +293,8 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
             logger.info(`React detected: ${(message.payload as { reactVersion: string }).reactVersion}`);
             // Send start command
             client.send(JSON.stringify({ type: 'start' }));
+            // Send current overlay state
+            client.send(JSON.stringify({ type: 'toggle-overlay', payload: { enabled: session.overlayEnabled } }));
             break;
           case 'error':
             logger.error('Browser error:', (message.payload as { message: string }).message);
@@ -287,6 +304,7 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
 
       client.on('close', () => {
         logger.info('Browser disconnected');
+        session.browserClients.delete(client);
       });
     });
 
@@ -525,6 +543,26 @@ function setupTUIEvents(session: ScanSession): void {
       )
     ));
     tui.update({ suggestions: session.suggestions });
+  });
+
+  tui.on('toggleOverlay', () => {
+    // Toggle overlay state
+    session.overlayEnabled = !session.overlayEnabled;
+    tui.update({ overlayEnabled: session.overlayEnabled });
+
+    // Send toggle message to all connected browsers
+    const message = JSON.stringify({
+      type: 'toggle-overlay',
+      payload: { enabled: session.overlayEnabled },
+    });
+
+    for (const client of session.browserClients) {
+      try {
+        client.send(message);
+      } catch {
+        // Client may have disconnected
+      }
+    }
   });
 }
 

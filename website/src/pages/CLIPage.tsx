@@ -23,6 +23,7 @@ const sidebarSections: SidebarSection[] = [
       { name: 'Output Formats', href: '#output-formats' },
       { name: 'Filtering', href: '#filtering' },
       { name: 'Thresholds', href: '#thresholds' },
+      { name: 'WebUI Dashboard', href: '#webui' },
     ],
   },
   {
@@ -42,6 +43,8 @@ const optionsTable = [
   { flag: '--exclude, -e', default: '-', description: 'Component patterns to exclude' },
   { flag: '--headless', default: 'false', description: 'Run browser in headless mode' },
   { flag: '--no-tui', default: 'false', description: 'Disable interactive TUI' },
+  { flag: '--webui, -W', default: 'false', description: 'Enable WebUI dashboard in browser' },
+  { flag: '--webui-port', default: '3100', description: 'WebUI dashboard port' },
   { flag: '--viewport, -v', default: '1280x720', description: 'Browser viewport size' },
 ];
 
@@ -114,7 +117,13 @@ npx @oxog/react-check scan http://localhost:3000
 npx @oxog/react-check http://localhost:3000
 
 # With options
-npx @oxog/react-check scan --duration 60 --threshold 20 http://localhost:3000`}
+npx @oxog/react-check scan --duration 60 --threshold 20 http://localhost:3000
+
+# With WebUI dashboard (opens in browser)
+npx @oxog/react-check scan --webui http://localhost:3000
+
+# WebUI with custom port
+npx @oxog/react-check scan --webui --webui-port 8080 http://localhost:3000`}
                 language="bash"
                 showLineNumbers={false}
               />
@@ -275,6 +284,48 @@ npx @oxog/react-check --include 'Page*' --exclude '*Layout' http://localhost:300
               <div className="mt-4 p-4 rounded-lg bg-warning/10 border border-warning/20">
                 <p className="text-sm">
                   <strong className="text-warning">Note:</strong> Patterns use glob syntax. <code className="px-1 bg-card rounded">*</code> matches any characters, <code className="px-1 bg-card rounded">?</code> matches a single character.
+                </p>
+              </div>
+            </section>
+
+            {/* WebUI Dashboard */}
+            <section id="webui" className="mb-16 scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-4">WebUI Dashboard</h2>
+              <p className="text-muted-foreground mb-6">
+                ReactCheck includes a real-time web dashboard that opens in your browser. Use it alongside or instead of the TUI.
+              </p>
+
+              <CodeBlock
+                code={`# Enable WebUI dashboard (opens automatically in browser)
+npx @oxog/react-check scan --webui http://localhost:3000
+
+# Custom WebUI port
+npx @oxog/react-check scan --webui --webui-port 8080 http://localhost:3000
+
+# WebUI only (disable TUI)
+npx @oxog/react-check scan --webui --silent http://localhost:3000`}
+                language="bash"
+                showLineNumbers={false}
+              />
+
+              <h3 className="text-lg font-semibold mt-8 mb-4">WebUI Features</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { title: 'Live Summary', desc: 'Real-time component, render, and FPS counts' },
+                  { title: 'Component Table', desc: 'Sortable and filterable component list' },
+                  { title: 'Render Events', desc: 'Live stream of render events as they occur' },
+                  { title: 'Render Chains', desc: 'Visualization of cascade render chains' },
+                ].map((item) => (
+                  <div key={item.title} className="p-4 rounded-lg bg-card border border-border">
+                    <h4 className="font-semibold text-primary mb-1">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-sm">
+                  <strong className="text-primary">Tip:</strong> The WebUI dashboard auto-opens in your default browser. You can run both TUI and WebUI simultaneously for the best of both worlds.
                 </p>
               </div>
             </section>

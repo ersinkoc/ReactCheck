@@ -79,7 +79,7 @@ export function Header() {
           {/* Right side */}
           <div className="flex items-center gap-2">
             <a
-              href="https://github.com/ersinkoc/react-check"
+              href="https://github.com/ersinkoc/ReactCheck"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex"
@@ -137,7 +137,7 @@ export function Header() {
               })}
               <div className="pt-4 border-t border-border space-y-2">
                 <a
-                  href="https://github.com/ersinkoc/react-check"
+                  href="https://github.com/ersinkoc/ReactCheck"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

@@ -53,6 +53,17 @@ const ANIMATION_DURATIONS: Record<OverlayConfig['animationSpeed'], number> = {
 };
 
 /**
+ * Flash background colors (with transparency for overlay effect)
+ */
+const FLASH_COLORS: Record<Severity | 'healthy' | 'unnecessary', string> = {
+  critical: 'rgba(239, 68, 68, 0.35)',
+  warning: 'rgba(234, 179, 8, 0.3)',
+  info: 'rgba(59, 130, 246, 0.25)',
+  healthy: 'rgba(34, 197, 94, 0.2)',
+  unnecessary: 'rgba(107, 114, 128, 0.15)',
+};
+
+/**
  * Overlay for visualizing React renders in the browser
  */
 export class Overlay {
@@ -156,12 +167,65 @@ export class Overlay {
         pointer-events: none;
         border-width: 2px;
         border-style: solid;
-        transition: opacity 0.3s ease-out;
         z-index: 1;
+        animation: highlight-pulse 0.5s ease-out;
       }
 
       .highlight.fade {
         opacity: 0;
+        transition: opacity 0.3s ease-out;
+      }
+
+      .flash-overlay {
+        position: fixed;
+        pointer-events: none;
+        z-index: 0;
+        animation: flash-pulse 0.4s ease-out forwards;
+        border-radius: 4px;
+      }
+
+      @keyframes flash-pulse {
+        0% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.8;
+          transform: scale(1.02);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes highlight-pulse {
+        0% {
+          opacity: 0;
+          box-shadow: 0 0 0 0 currentColor;
+        }
+        30% {
+          opacity: 1;
+          box-shadow: 0 0 8px 2px currentColor;
+        }
+        100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 transparent;
+        }
+      }
+
+      @keyframes badge-pop {
+        0% {
+          transform: scale(0.8);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
       }
 
       .badge {
@@ -401,7 +465,7 @@ export class Overlay {
   }
 
   /**
-   * Highlight a component render
+   * Highlight a component render with flash effect
    * @param render - Render information
    * @param element - DOM element to highlight
    */
@@ -412,9 +476,13 @@ export class Overlay {
     if (rect.width === 0 || rect.height === 0) return;
 
     const severity = this.getSeverity(render);
-    const color = SEVERITY_COLORS[severity];
+    const borderColor = SEVERITY_COLORS[severity];
+    const flashColor = FLASH_COLORS[severity];
 
-    // Get or create highlight element
+    // Create flash overlay (background flash effect)
+    this.createFlashOverlay(rect, flashColor);
+
+    // Get or create highlight element (border)
     let highlight = this.highlights.get(render.componentName);
     if (!highlight) {
       highlight = document.createElement('div');
@@ -423,6 +491,11 @@ export class Overlay {
       this.highlights.set(render.componentName, highlight);
     }
 
+    // Force re-trigger animation by removing and re-adding
+    highlight.style.animation = 'none';
+    highlight.offsetHeight; // Trigger reflow
+    highlight.style.animation = '';
+
     // Update position and style
     highlight.style.cssText = `
       position: fixed;
@@ -430,9 +503,11 @@ export class Overlay {
       top: ${rect.top}px;
       width: ${rect.width}px;
       height: ${rect.height}px;
-      border: 2px solid ${color};
+      border: 2px solid ${borderColor};
+      color: ${borderColor};
       pointer-events: none;
       z-index: 1;
+      animation: highlight-pulse 0.5s ease-out;
     `;
     highlight.classList.remove('fade');
 
@@ -446,11 +521,37 @@ export class Overlay {
 
     // Update badge
     if (this.config.showBadges) {
-      this.updateBadge(render, rect, color);
+      this.updateBadge(render, rect, borderColor);
     }
 
     // Update stats
     this.updateStats();
+  }
+
+  /**
+   * Create a flash overlay effect on the element
+   * @param rect - Element bounding rectangle
+   * @param color - Flash color
+   */
+  private createFlashOverlay(rect: DOMRect, color: string): void {
+    if (!this.shadowRoot) return;
+
+    const flash = document.createElement('div');
+    flash.className = 'flash-overlay';
+    flash.style.cssText = `
+      left: ${rect.left}px;
+      top: ${rect.top}px;
+      width: ${rect.width}px;
+      height: ${rect.height}px;
+      background: ${color};
+    `;
+
+    this.shadowRoot.appendChild(flash);
+
+    // Remove after animation completes
+    setTimeout(() => {
+      flash.remove();
+    }, 500);
   }
 
   /**
@@ -475,7 +576,8 @@ export class Overlay {
       this.badges.set(render.componentName, badge);
     }
 
-    // Update badge
+    // Update badge with pop animation
+    const isNewBadge = !this.badges.has(render.componentName);
     badge.textContent = `${render.componentName}: ${count}`;
     badge.style.cssText = `
       position: fixed;
@@ -491,7 +593,16 @@ export class Overlay {
       pointer-events: none;
       z-index: 2;
       white-space: nowrap;
+      ${isNewBadge ? 'animation: badge-pop 0.3s ease-out;' : ''}
     `;
+
+    // Pulse effect on count update
+    if (!isNewBadge) {
+      badge.style.transform = 'scale(1.15)';
+      setTimeout(() => {
+        if (badge) badge.style.transform = 'scale(1)';
+      }, 150);
+    }
   }
 
   /**

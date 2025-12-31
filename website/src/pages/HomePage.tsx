@@ -16,12 +16,13 @@ import {
   Code2,
   Cpu,
   Eye,
+  Globe,
 } from 'lucide-react';
 
 const terminalLines = [
   { type: 'command' as const, text: 'npx @oxog/react-check localhost:3000' },
   { type: 'empty' as const, text: '' },
-  { type: 'output' as const, text: '<span style="color: #3b82f6;">ReactCheck v1.0.0</span>' },
+  { type: 'output' as const, text: '<span style="color: #3b82f6;">ReactCheck v1.1.0</span>' },
   { type: 'output' as const, text: 'Starting browser...' },
   { type: 'output' as const, text: '<span style="color: #22c55e;">✓</span> Connected to localhost:3000' },
   { type: 'output' as const, text: '<span style="color: #22c55e;">✓</span> React 18.2.0 detected' },
@@ -50,6 +51,11 @@ const features = [
     icon: Eye,
     title: 'Real-time Monitoring',
     description: 'Watch component renders as they happen with an interactive TUI dashboard.',
+  },
+  {
+    icon: Globe,
+    title: 'WebUI Dashboard',
+    description: 'Real-time web dashboard with live updates. Use --webui to open in your browser.',
   },
   {
     icon: Search,
@@ -115,6 +121,7 @@ const ProductCard = memo(function ProductCard({
 const comparisonData = [
   { feature: 'Zero dependencies', reactcheck: true, others: false },
   { feature: 'CLI with interactive TUI', reactcheck: true, others: false },
+  { feature: 'Real-time WebUI dashboard', reactcheck: true, others: false },
   { feature: 'Actionable fix suggestions', reactcheck: true, others: false },
   { feature: 'Render chain detection', reactcheck: true, others: false },
   { feature: 'CI/CD integration', reactcheck: true, others: true },
@@ -454,7 +461,7 @@ export function HomePage() {
                 </Button>
               </Link>
               <a
-                href="https://github.com/ersinkoc/react-check"
+                href="https://github.com/ersinkoc/ReactCheck"
                 target="_blank"
                 rel="noopener noreferrer"
               >

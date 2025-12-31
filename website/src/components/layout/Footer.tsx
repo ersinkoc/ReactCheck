@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Github, Twitter, Heart } from 'lucide-react';
+import { Github, Heart } from 'lucide-react';
 
 const footerLinks = {
   product: [
@@ -10,14 +10,14 @@ const footerLinks = {
   ],
   resources: [
     { name: 'Fix Suggestions', href: '/fixes' },
-    { name: 'GitHub', href: 'https://github.com/nicholasoxford/react-check', external: true },
+    { name: 'GitHub', href: 'https://github.com/ersinkoc/ReactCheck', external: true },
     { name: 'npm', href: 'https://www.npmjs.com/package/@oxog/react-check', external: true },
-    { name: 'Changelog', href: 'https://github.com/nicholasoxford/react-check/releases', external: true },
+    { name: 'Changelog', href: 'https://github.com/ersinkoc/ReactCheck/releases', external: true },
   ],
   community: [
-    { name: 'GitHub Discussions', href: 'https://github.com/nicholasoxford/react-check/discussions', external: true },
-    { name: 'Issues', href: 'https://github.com/nicholasoxford/react-check/issues', external: true },
-    { name: 'Contributing', href: 'https://github.com/nicholasoxford/react-check/blob/main/CONTRIBUTING.md', external: true },
+    { name: 'GitHub Discussions', href: 'https://github.com/ersinkoc/ReactCheck/discussions', external: true },
+    { name: 'Issues', href: 'https://github.com/ersinkoc/ReactCheck/issues', external: true },
+    { name: 'Contributing', href: 'https://github.com/ersinkoc/ReactCheck/blob/main/CONTRIBUTING.md', external: true },
   ],
 };
 
@@ -38,20 +38,12 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-3">
               <a
-                href="https://github.com/nicholasoxford/react-check"
+                href="https://github.com/ersinkoc/ReactCheck"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Github className="w-5 h-5" />
-              </a>
-              <a
-                href="https://twitter.com/nicholasoxford"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Twitter className="w-5 h-5" />
               </a>
             </div>
           </div>

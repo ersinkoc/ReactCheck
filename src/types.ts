@@ -362,7 +362,8 @@ export type CLIMessage =
   | { type: 'stop' }
   | { type: 'reset' }
   | { type: 'config'; payload: Partial<ScannerConfig> }
-  | { type: 'highlight'; payload: { component: string; enabled: boolean } };
+  | { type: 'highlight'; payload: { component: string; enabled: boolean } }
+  | { type: 'toggle-overlay'; payload: { enabled: boolean } };
 
 /**
  * Scanner configuration sent to browser
