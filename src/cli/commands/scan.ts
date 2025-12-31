@@ -73,9 +73,14 @@ async function installPuppeteer(wsServer?: WebSocketServer): Promise<boolean> {
     // ESM import cache cannot be cleared, so we need to respawn
     const args = process.argv.slice(1);
     const { spawn } = await import('node:child_process');
+
+    // On Windows, use shell to properly handle the command
+    const isWindows = process.platform === 'win32';
     const child = spawn(process.execPath, args, {
       stdio: 'inherit',
       env: process.env,
+      shell: isWindows,
+      detached: false,
     });
 
     // Wait for child to exit and propagate exit code
@@ -83,7 +88,9 @@ async function installPuppeteer(wsServer?: WebSocketServer): Promise<boolean> {
       child.on('exit', (code) => {
         process.exit(code ?? 0);
       });
-      child.on('error', () => {
+      child.on('error', (err) => {
+        // eslint-disable-next-line no-console
+        console.error('Spawn error:', err);
         resolve();
       });
     });
@@ -93,6 +100,8 @@ async function installPuppeteer(wsServer?: WebSocketServer): Promise<boolean> {
   } catch (error) {
     // eslint-disable-next-line no-console
     console.log('');
+    // eslint-disable-next-line no-console
+    console.error('Puppeteer installation error:', error);
     logger.error('Failed to install puppeteer automatically.');
     logger.info('Please install it manually: npm install puppeteer');
     logger.info('Or use --proxy mode: react-check scan --proxy <url>');
@@ -707,7 +716,7 @@ function generateReport(session: ScanSession): SessionReport {
   };
 
   return {
-    version: '1.1.5',
+    version: '1.1.6',
     generated: formatDate(),
     session: sessionInfo,
     summary: exported.stats.summary,

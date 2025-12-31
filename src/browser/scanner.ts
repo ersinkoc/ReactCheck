@@ -19,13 +19,23 @@ import {
 import { Overlay } from './overlay.js';
 
 /**
+ * Render event with DOM element reference
+ */
+export interface RenderEvent {
+  /** Render information */
+  render: RenderInfo;
+  /** DOM element associated with this render (if found) */
+  element: Element | null;
+}
+
+/**
  * Browser scanner events
  */
 export interface BrowserScannerEvents {
   /** Index signature for EventMap compatibility */
   [key: string]: unknown;
-  /** Emitted on each render */
-  render: RenderInfo;
+  /** Emitted on each render with DOM element */
+  render: RenderEvent;
   /** Emitted when scanner is ready */
   ready: { reactVersion: string };
   /** Emitted on error */
@@ -270,10 +280,10 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
   }
 
   /**
-   * Process a fiber commit
+   * Process a fiber commit (public for IIFE hook integration)
    * @param rootFiber - Root fiber of the committed tree
    */
-  private processCommit(rootFiber: FiberNode): void {
+  processCommit(rootFiber: FiberNode): void {
     // Walk the fiber tree and find all user components that rendered
     this.walkFiber(rootFiber, null);
   }
@@ -338,9 +348,11 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
       state: fiber.memoizedState,
     });
 
+    // Get DOM element for this fiber
+    const domElement = this.getDOMElement(fiber);
+
     // Visual highlight if overlay is enabled
     if (this.overlay && this.config.highlightRenders) {
-      const domElement = this.getDOMElement(fiber);
       if (domElement) {
         this.overlay.highlight(renderInfo, domElement);
       } else {
@@ -349,8 +361,8 @@ export class BrowserScanner extends EventEmitter<BrowserScannerEvents> {
       }
     }
 
-    // Emit render event
-    this.emit('render', renderInfo);
+    // Emit render event with DOM element
+    this.emit('render', { render: renderInfo, element: domElement });
   }
 
   /**

@@ -14,7 +14,7 @@ const logger = new Logger({ prefix: 'ReactCheck', level: LogLevel.INFO });
 /**
  * Package version
  */
-const VERSION = '1.1.5';
+const VERSION = '1.1.6';
 
 /**
  * Print version information
@@ -115,6 +115,19 @@ export class CLI {
  * CLI entry point
  */
 async function main(): Promise<void> {
+  // Catch unhandled errors globally
+  process.on('uncaughtException', (error) => {
+    // eslint-disable-next-line no-console
+    console.error(semantic.error('Uncaught exception:'), error);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    // eslint-disable-next-line no-console
+    console.error(semantic.error('Unhandled rejection:'), reason);
+    process.exit(1);
+  });
+
   const cli = new CLI(process.argv.slice(2));
   const exitCode = await cli.run();
   process.exit(exitCode);

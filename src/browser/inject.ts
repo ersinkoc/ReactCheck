@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 
-import type { BrowserMessage, CLIMessage, ScannerConfig, WindowWithReactDevTools } from '../types.js';
+import type { BrowserMessage, CLIMessage, FiberNode, ScannerConfig, WindowWithReactDevTools } from '../types.js';
 import { BrowserScanner } from './scanner.js';
 import { Overlay } from './overlay.js';
 
@@ -67,8 +67,8 @@ class ReactCheckInjector {
     // Set up scanner events
     this.setupScannerEvents();
 
-    // Start the scanner
-    this.scanner.start();
+    // Note: Don't call scanner.start() here - the IIFE hook handles commit forwarding
+    // scanner.start() would override our already-installed hook
 
     // Connect to CLI
     this.connect();
@@ -88,15 +88,14 @@ class ReactCheckInjector {
    * Set up scanner event handlers
    */
   private setupScannerEvents(): void {
-    this.scanner.on('render', (render) => {
+    this.scanner.on('render', ({ render, element }) => {
       // Send to CLI
       this.send({ type: 'render', payload: render });
 
       // Always record render for stats (even without DOM element)
       this.overlay.recordRender(render);
 
-      // Try to highlight if we can find the DOM element
-      const element = this.findDOMElement(render.componentName);
+      // Highlight if we have a DOM element from fiber
       if (element) {
         this.overlay.highlight(render, element);
       }
@@ -143,9 +142,6 @@ class ReactCheckInjector {
 
         // Flush any queued messages (renders that happened before connection)
         this.flushMessageQueue();
-
-        // Start scanning (scanner may already be started by hook)
-        this.scanner.start();
       };
 
       this.ws.onmessage = (event) => {
@@ -301,26 +297,6 @@ class ReactCheckInjector {
     }
   }
 
-  /**
-   * Find DOM element for a component
-   * @param componentName - Component name
-   * @returns DOM element or null
-   */
-  private findDOMElement(componentName: string): Element | null {
-    // This is a simplified approach
-    // In production, we would use fiber.stateNode or traverse the fiber tree
-    // to find the actual DOM node
-
-    // Try to find by data attribute (if available)
-    const byAttr = document.querySelector(`[data-component="${componentName}"]`);
-    if (byAttr) return byAttr;
-
-    // Try to find by React internal attributes
-    const allElements = document.querySelectorAll('[class*="' + componentName + '"]');
-    if (allElements.length > 0) return allElements[0] ?? null;
-
-    return null;
-  }
 
   /**
    * Destroy the injector
@@ -355,13 +331,42 @@ class ReactCheckInjector {
   // Create injector instance first (but don't init yet)
   const injector = new ReactCheckInjector();
 
-  // CRITICAL: Install React DevTools hook IMMEDIATELY before React loads
-  // This must happen synchronously before any React code runs
-  if (!win.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
-    // Queue to store commits until injector is ready
-    const pendingCommits: Array<{ rendererID: number; root: unknown }> = [];
-    let injectorReady = false;
+  // Queue to store commits until injector is ready
+  const pendingCommits: Array<{ rendererID: number; root: unknown }> = [];
+  let injectorReady = false;
 
+  // Handler for processing commits
+  const handleCommit = (root: unknown) => {
+    if (injectorReady) {
+      // Forward to injector's scanner
+      const scanner = (injector as unknown as { scanner: BrowserScanner }).scanner;
+      if (scanner) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fiber = (root as any).current;
+        scanner.processCommit(fiber);
+      }
+    } else {
+      // Queue for later
+      pendingCommits.push({ rendererID: 0, root });
+    }
+  };
+
+  // Process pending commits when ready
+  const processPendingCommits = () => {
+    injectorReady = true;
+    const scanner = (injector as unknown as { scanner: BrowserScanner }).scanner;
+    if (scanner) {
+      for (const { root } of pendingCommits) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        scanner.processCommit((root as any).current);
+      }
+      pendingCommits.length = 0;
+    }
+  };
+
+  // CRITICAL: Install or hook into React DevTools hook
+  if (!win.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+    // No existing hook - install our own
     const hook = {
       renderers: new Map(),
       supportsFiber: true,
@@ -370,45 +375,35 @@ class ReactCheckInjector {
         this.renderers.set(id, renderer);
         return id;
       },
-      onCommitFiberRoot: function(rendererID: number, root: unknown) {
-        if (injectorReady) {
-          // Forward to injector's scanner
-          const scanner = (injector as unknown as { scanner: BrowserScanner }).scanner;
-          if (scanner) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            scanner['processCommit']((root as any).current);
-          }
-        } else {
-          // Queue for later
-          pendingCommits.push({ rendererID, root });
-        }
+      onCommitFiberRoot: function(_rendererID: number, root: unknown) {
+        handleCommit(root);
       },
       onCommitFiberUnmount: function() {},
-      // Method to process pending commits when injector is ready
-      _processPending: function() {
-        injectorReady = true;
-        const scanner = (injector as unknown as { scanner: BrowserScanner }).scanner;
-        if (scanner) {
-          for (const { root } of pendingCommits) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            scanner['processCommit']((root as any).current);
-          }
-          pendingCommits.length = 0;
-        }
-      },
     };
     win.__REACT_DEVTOOLS_GLOBAL_HOOK__ = hook;
     // eslint-disable-next-line no-console
     console.log('[ReactCheck] DevTools hook installed');
+  } else {
+    // Hook already exists (e.g., Vite refresh, React DevTools) - wrap it
+    const existingHook = win.__REACT_DEVTOOLS_GLOBAL_HOOK__;
+    const originalOnCommit = existingHook.onCommitFiberRoot.bind(existingHook);
 
-    // Mark injector ready callback
-    (injector as unknown as { _markHookReady: () => void })._markHookReady = () => {
-      hook._processPending();
+    existingHook.onCommitFiberRoot = (rendererID: number, root: { current: FiberNode }, priorityLevel?: unknown) => {
+      // Call original first
+      originalOnCommit(rendererID, root, priorityLevel);
+      // Then our handler
+      handleCommit(root);
     };
+    // eslint-disable-next-line no-console
+    console.log('[ReactCheck] Wrapped existing DevTools hook');
   }
 
+  // Mark injector ready callback
+  (injector as unknown as { _markHookReady: () => void })._markHookReady = () => {
+    processPendingCommits();
+  };
+
   // Initialize after DOM is ready (for overlay and WebSocket)
-  // The hook is already installed above, so React will register with it
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       injector.init();

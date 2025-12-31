@@ -139,11 +139,10 @@ export class BrowserLauncher extends EventEmitter<BrowserEvents> {
         await this.page.evaluateOnNewDocument(this.injectionScript);
       }
 
-      // Build default injection script
+      // Set WebSocket port for injection script
       const wsPort = this.options.wsPort;
       await this.page.evaluateOnNewDocument(`
         window.__REACTCHECK_PORT__ = ${wsPort};
-        window.__REACTCHECK_INJECTED__ = true;
       `);
 
       this.emit('launched', undefined);
