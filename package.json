@@ -1,6 +1,6 @@
 {
   "name": "@oxog/react-check",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Scan, diagnose, and fix React performance issues. CLI tool and runtime analyzer with actionable fix suggestions.",
   "keywords": [
     "react",
