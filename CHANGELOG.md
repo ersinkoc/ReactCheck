@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SSL/HTTPS support: Browser now ignores certificate errors for self-signed certs
 - Improved scan stability: Better signal handling for Windows and non-TTY environments
 - TUI now properly detects TTY availability and falls back gracefully
+- Added automatic retry (3 attempts) when target app is not ready
+- Better error messages for common issues (connection refused, port in use)
 
 ## [1.1.1] - 2025-12-31
 

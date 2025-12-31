@@ -191,27 +191,44 @@ export class BrowserLauncher extends EventEmitter<BrowserEvents> {
   }
 
   /**
-   * Navigate to a URL
+   * Navigate to a URL with retry support
    * @param url - URL to navigate to
+   * @param retries - Number of retries (default: 3)
+   * @param retryDelay - Delay between retries in ms (default: 2000)
    */
-  async navigate(url: string): Promise<void> {
+  async navigate(url: string, retries: number = 3, retryDelay: number = 2000): Promise<void> {
     if (!this.page) {
       throw new Error('Browser not launched');
     }
 
-    try {
-      await this.page.goto(url, {
-        waitUntil: 'networkidle2',
-        timeout: this.options.timeout,
-      });
+    let lastError: Error | null = null;
 
-      this.emit('navigated', { url });
-      logger.info(`Navigated to ${url}`);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      this.emit('error', err);
-      throw err;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await this.page.goto(url, {
+          waitUntil: 'networkidle2',
+          timeout: this.options.timeout,
+        });
+
+        this.emit('navigated', { url });
+        logger.info(`Navigated to ${url}`);
+        return;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        this.emit('error', lastError);
+
+        // Check if it's a connection refused error - target might not be ready
+        if (lastError.message.includes('ERR_CONNECTION_REFUSED') && attempt < retries) {
+          logger.warn(`Connection refused, retrying in ${retryDelay}ms... (${attempt}/${retries})`);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          continue;
+        }
+
+        throw lastError;
+      }
     }
+
+    throw lastError ?? new Error('Navigation failed');
   }
 
   /**

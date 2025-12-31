@@ -429,7 +429,24 @@ export async function runScanCommand(args: ParsedArgs): Promise<number> {
     return summary.criticalIssues > 0 ? 1 : 0;
   } catch (error) {
     await cleanupSession(session);
-    logger.error('Scan failed:', error);
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Provide helpful error messages for common issues
+    if (errorMessage.includes('ERR_CONNECTION_REFUSED')) {
+      logger.error(`Could not connect to ${mergedOptions.target}`);
+      logger.info('Make sure your React application is running at that address.');
+      logger.info('Example: npm start  or  npm run dev');
+    } else if (errorMessage.includes('EADDRINUSE')) {
+      logger.error(`Port ${mergedOptions.port} is already in use`);
+      logger.info('Try using a different port with --port <number>');
+    } else if (errorMessage.includes('ERR_CERT')) {
+      logger.error('SSL certificate error');
+      logger.info('ReactCheck now supports self-signed certificates by default.');
+    } else {
+      logger.error('Scan failed:', errorMessage);
+    }
+
     return 2;
   }
 }

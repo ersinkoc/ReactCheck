@@ -50,7 +50,7 @@ export function Header() {
               <span className="text-primary text-2xl font-bold">/&gt;</span>
             </div>
             <Badge variant="secondary" className="hidden sm:inline-flex">
-              v1.0.0
+              v1.1.2
             </Badge>
           </Link>
 
